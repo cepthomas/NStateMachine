@@ -1,16 +1,18 @@
 using System;
 using System.Collections.Generic;
-
+using System.Diagnostics;
 
 namespace NStateMachine
 {
-    /// <summary>
-    /// Definition for transition/entry/exit functions.
-    /// </summary>
+    /// <summary>Definition for transition/entry/exit functions.</summary>
     /// <param name="o"></param>
     public delegate void SmFunc(object o);
 
-    /// <summary>Data carrying class. TODO Record?</summary>
+    /// <summary>Logging.</summary>
+    [Flags]
+    public enum TraceLevel { None = 0, App = 1, Engine = 2 }
+
+    /// <summary>Data carrying class. TODO1 use Record?</summary>
     public class EventInfo
     {
         /// <summary>Unique event name.</summary>
@@ -27,29 +29,26 @@ namespace NStateMachine
     }
 
     /// <summary>
-    /// A generalized implementation of a state machine.
+    /// Agnostic core engine of a state machine.
     /// </summary>
-    /// <remarks>
-    /// States:
-    /// - Each state must have a name, except the (optional) default state identified by null.
-    ///   The default state is checked first, then the current state.
-    /// - Each state must have one or more Transitions.
-    /// - Each state may have an enter and/or exit action executed on state changes.
-    /// 
-    /// Transitions:
-    ///  - Each transition must have an event name, except the (optional) default transition identified by null.
-    ///    If a transition for the event name is not found, the default transition is executed.
-    ///  - Each transition may have a next state name otherwise stays in the same state.
-    ///  - Each transition may have a transition action.
-    /// </remarks>
     public class SmEngine
     {
+        #region Constants to make maps prettier
+        public const SmFunc NO_FUNC = null;
+        public const string DEF_STATE = "DEFAULT";
+        public const string SAME_STATE = "";
+        public const string DEF_EVENT = "DEFAULT";
+        #endregion
+
         #region Fields
         /// <summary>All the states.</summary>
         Dictionary<string, State> _states = new Dictionary<string, State>();
 
         /// <summary>The default state if used.</summary>
         State _defaultState = null;
+
+        /// <summary>The current state.</summary>
+        State _currentState = null;
 
         /// <summary>The event queue.</summary>
         Queue<EventInfo> _eventQueue = new Queue<EventInfo>();
@@ -62,20 +61,91 @@ namespace NStateMachine
         #endregion
 
         #region Properties
-        /// <summary>The machine current state.</summary>
-        public State CurrentState { get; private set; } = null;
+        /// <summary>Readable version of current state.</summary>
+        public string CurrentState { get { return _currentState == null ? "" : _currentState.StateName; } }
 
         /// <summary>Accumulated list of errors.</summary>
         public List<string> Errors { get; } = new List<string>();
+
+        /// <summary>For diagnostics.</summary>
+        public TraceLevel TtraceLevel { get; set; } = TraceLevel.App;
         #endregion
 
+        #region Public functions
+        /// <summary>
+        /// Generate DOT markup.
+        /// </summary>
+        /// <returns>Returns a string that contains the DOT markup.</returns>
+        public string GenerateDot()
+        {
+            List<string> ls = new List<string>
+            {
+                "digraph StateDiagram {",
+                // Init attributes for dot.
+                "    ratio=\"compress\";",
+                "    fontname=\"Arial\";",
+                "    label=\"\";", // (your label here!)
+                "    node [",
+                "    height=\"0.50\";",
+                "    width=\"1.0\";",
+                "    shape=\"ellipse\";",
+                "    fixedsize=\"true\";",
+                "    fontsize=\"8\";",
+                "    fontname=\"Arial\";",
+                "];",
+                "",
+                "    edge [",
+                "    fontsize=\"8\";",
+                "    fontname=\"Arial\";",
+                "];",
+                ""
+            };
+
+            // Generate actual nodes and edges from states. TODO1 options to add func names etc.
+            foreach (State s in _states.Values)
+            {
+                // Write a node for the state.
+                //ls.Add($"    \"{s.StateName}\";");
+
+                // Iterate through the state transitions.
+                foreach (KeyValuePair<string, Transition> kvp in s.Transitions)
+                {
+                    Transition t = kvp.Value;
+
+                    // Get event name, but strip off "Transition" suffix if present to save space.
+                    //string transitionSuffix = "Transition";
+                    string eventName = t.EventName;
+                    //if (eventName.EndsWith(transitionSuffix))
+                    //{
+                    //    eventName = eventName.Substring(0, eventName.Length - transitionSuffix.Length);
+                    //}
+
+                    // Write an edge for the transition
+                    string nextState = t.NextState;
+                    //if (nextState == "SAME_STATE")
+                    //{
+                    //    nextState = s.StateName;
+                    //}
+                    ls.Add($"        \"{s.StateName}\" -> \"{nextState}\" [label=\"{eventName}\"];");
+                }
+
+                //ls.Add("{0}");
+            }
+
+            ls.Add("}");
+
+            return string.Join(Environment.NewLine, ls);
+        }
+        #endregion
+
+        #region Private and protected functions
         /// <summary>
         /// Init everything. Also does validation of the definitions at the same time.
         /// </summary>
         /// <param name="states">All the states.</param>
         /// <param name="initialState">Initial state.</param>
         /// <returns>Initialization success.</returns>
-        public bool Init(States states, string initialState)
+        protected bool InitSm(States states, string initialState)
         {
             Errors.Clear();
             _states.Clear();
@@ -94,11 +164,11 @@ namespace NStateMachine
                     else
                     {
                         // Check for default state.
-                        if(st.StateName == null)
+                        if(st.StateName == DEF_STATE)
                         {
                             if(_defaultState == null)
                             {
-                                st.StateName = "Default";
+                                st.StateName = DEF_STATE;
                                 _defaultState = st;
                             }
                             else
@@ -138,8 +208,8 @@ namespace NStateMachine
 
                 if (!string.IsNullOrEmpty(initialState) && _states.ContainsKey(initialState))
                 {
-                    CurrentState = _states[initialState];
-                    CurrentState.Enter(null);
+                    _currentState = _states[initialState];
+                    _currentState.Enter(null);
                 }
                 else // invalid initial state
                 {
@@ -149,8 +219,8 @@ namespace NStateMachine
 
                 if (!string.IsNullOrEmpty(initialState) && _states.ContainsKey(initialState))
                 {
-                    CurrentState = _states[initialState];
-                    CurrentState.Enter(null);
+                    _currentState = _states[initialState];
+                    _currentState.Enter(null);
                 }
                 else // invalid initial state
                 {
@@ -174,7 +244,7 @@ namespace NStateMachine
         /// <param name="evt">Incoming event.</param>
         /// <param name="o">Optional event data.</param>
         /// <returns>Ok or error.</returns>
-        public bool ProcessEvent(string evt, object o = null)
+        protected bool ProcessEvent(string evt, object o = null)
         {
             bool ok = true;
 
@@ -206,31 +276,31 @@ namespace NStateMachine
                             if (nextStateName is null)
                             {
                                 // Try current state.
-                                nextStateName = CurrentState.ProcessEvent(ei);
+                                nextStateName = _currentState.ProcessEvent(ei);
                             }
 
                             if (nextStateName is null)
                             {
-                                throw new Exception($"State: {CurrentState.StateName} Invalid event: {ei.Name}");
+                                throw new Exception($"State: {_currentState.StateName} Invalid event: {ei.Name}");
                             }
 
                             // Is there a state change?
-                            if (nextStateName != CurrentState.StateName)
+                            if (nextStateName != _currentState.StateName)
                             {
                                 // Get the next state.
                                 State nextState = _states[nextStateName];
 
                                 // Exit current state.
-                                CurrentState.Exit(ei.Param);
+                                _currentState.Exit(ei.Param);
 
                                 // Set new state.
-                                CurrentState = nextState;
+                                _currentState = nextState;
 
                                 // Enter new state.
-                                CurrentState.Enter(ei.Param);
+                                _currentState.Enter(ei.Param);
                             }
                         }
-                        catch (Exception e)
+                        catch (Exception e) //TODO1 better run time handling - ask client?
                         {
                             // Add to the list of errors.
                             Errors.Add(e.Message);
@@ -255,69 +325,16 @@ namespace NStateMachine
             }
         }
 
-        /// <summary>
-        /// Generate DOT markup.
-        /// </summary>
-        /// <returns>Returns a string that contains the DOT markup.</returns>
-        public string GenerateDot()
+        /// <summary>Adjust to taste.</summary>
+        /// <param name="s"></param>
+        /// <param name="s">lvl</param>
+        protected void Trace(TraceLevel lvl, string s)
         {
-            List<string> ls = new List<string>
+            if ((TtraceLevel & lvl) > 0)
             {
-                "digraph StateDiagram {",
-                // Init attributes for dot.
-                "    ratio=\"compress\";",
-                "    fontname=\"Arial\";",
-                "    label=\"\";", // (your label here!)
-                "    node [",
-                "    height=\"0.50\";",
-                "    width=\"1.0\";",
-                "    shape=\"ellipse\";",
-                "    fixedsize=\"true\";",
-                "    fontsize=\"8\";",
-                "    fontname=\"Arial\";",
-                "];",
-                "",
-                "    edge [",
-                "    fontsize=\"8\";",
-                "    fontname=\"Arial\";",
-                "];",
-                ""
-            };
-
-            // Generate actual nodes and edges from states. TODO options to add func names etc.
-            foreach (State s in _states.Values)
-            {
-                // Write a node for the state.
-                //ls.Add($"    \"{s.StateName}\";");
-
-                // Iterate through the state transitions.
-                foreach (KeyValuePair<string, Transition> kvp in s.Transitions)
-                {
-                    Transition t = kvp.Value;
-
-                    // Get event name, but strip off "Transition" suffix if present to save space.
-                    //string transitionSuffix = "Transition";
-                    string eventName = t.EventName;
-                    //if (eventName.EndsWith(transitionSuffix))
-                    //{
-                    //    eventName = eventName.Substring(0, eventName.Length - transitionSuffix.Length);
-                    //}
-
-                    // Write an edge for the transition
-                    string nextState = t.NextState;
-                    //if (nextState == "SAME_STATE")
-                    //{
-                    //    nextState = s.StateName;
-                    //}
-                    ls.Add($"        \"{s.StateName}\" -> \"{nextState}\" [label=\"{eventName}\"];");
-                }
-
-                //ls.Add("{0}");
+                Debug.WriteLine($"{DateTime.Now.ToString("yyyy'-'MM'-'dd HH':'mm':'ss.fff")} {lvl} {s}");
             }
-
-            ls.Add("}");
-
-            return string.Join(Environment.NewLine, ls);
         }
+        #endregion
     }
 }    

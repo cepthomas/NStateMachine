@@ -12,8 +12,7 @@ namespace NStateMachine
         public void Run()
         {
             // Create a new lock.
-            CombinationLock mainDoorLock = new CombinationLock(CombinationLock.HwLockState.HwIsLocked);
-            mainDoorLock.InitStateMachine();
+            CombinationLock mainDoorLock = new CombinationLock();
 
             // Should come up in the locked state.
             IsEqual(mainDoorLock.CurrentState, "Locked");
@@ -24,7 +23,6 @@ namespace NStateMachine
             mainDoorLock.PressKey(CombinationLock.Keys.Key_0);
             IsEqual(mainDoorLock.CurrentState, "Locked");
             mainDoorLock.PressKey(CombinationLock.Keys.Key_0);
-
             // Should now be unlocked.
             IsEqual(mainDoorLock.CurrentState, "Unlocked");
 
@@ -47,12 +45,11 @@ namespace NStateMachine
             mainDoorLock.PressKey(CombinationLock.Keys.Key_Set);
             IsEqual(mainDoorLock.CurrentState, "SettingCombo");
 
-            IsEqual(mainDoorLock.SM.ProcessEvent("NGEVENT"), false);
-
+            mainDoorLock.InjectBadEvent();
             IsEqual(mainDoorLock.CurrentState, "SettingCombo");
 
             // The state machine is now dead and will no longer process events.
-            IsGreater(mainDoorLock.SM.Errors.Count, 0);
+            IsGreater(mainDoorLock.Errors.Count, 0);
 
             mainDoorLock.PressKey(CombinationLock.Keys.Key_1);
             mainDoorLock.PressKey(CombinationLock.Keys.Key_2);
@@ -60,18 +57,16 @@ namespace NStateMachine
             IsEqual(mainDoorLock.CurrentState, "SettingCombo");
 
             mainDoorLock.PressKey(CombinationLock.Keys.Key_Set);
-
             IsEqual(mainDoorLock.CurrentState, "Unlocked");
 
             // Default state test.
             mainDoorLock.PressKey(CombinationLock.Keys.Key_Power);
-
             IsEqual(mainDoorLock.CurrentState, "Locked");
 
             // Make a picture, maybe.
             try
             {
-                string sdot = mainDoorLock.SM.GenerateDot();
+                string sdot = mainDoorLock.GenerateDot();
                 File.WriteAllText("testout.gv", sdot);
                 Process p = new Process();
                 p.StartInfo.FileName = "dot";
@@ -80,21 +75,22 @@ namespace NStateMachine
             }
             catch (Exception)
             {
+                //TODO1 handle
             }
         }
 
         void IsEqual<T>(T value1, T value2, [CallerFilePath] string file = "???", [CallerLineNumber] int line = -1) where T : IComparable
         {
-            if (value1.CompareTo(value2) == 0)
+            if (value1.CompareTo(value2) != 0)
             {
-                Console.WriteLine($"[{value1}] should be [{value2}] : {file}({line})");
+                Debug.WriteLine($">>>>> TEST [{value1}] should be [{value2}] : {file}({line})");
             }
         }
         void IsGreater<T>(T value1, T value2, [CallerFilePath] string file = "???", [CallerLineNumber] int line = -1) where T : IComparable
         {
             if (value1.CompareTo(value2) != 1)
             {
-                Console.WriteLine($"[{value1}] should be greater than [{value2}] : {file}({line})");
+                Debug.WriteLine($">>>>> TEST [{value1}] should be greater than [{value2}] : {file}({line})");
             }
         }
     }

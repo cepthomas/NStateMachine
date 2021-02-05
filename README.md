@@ -8,4 +8,4 @@ Probably I should make this into a nuget package at some point.
 - Semi-hierarchical state machine for .NET.
 - Generates diagrams via dot.
 
-TODO examples and pics.
+TODO1 examples and pics.

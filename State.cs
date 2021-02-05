@@ -5,6 +5,13 @@ using System.Collections.Generic;
 namespace NStateMachine
 {
     /// <summary>Describes an individual state.</summary>
+    /// <remarks>
+    /// States:
+    /// - Each state must have a name, except the (optional) default state identified by null.
+    ///   The default state is checked first, then the current state.
+    /// - Each state must have one or more Transitions.
+    /// - Each state may have an enter and/or exit action executed on state changes.
+    /// </remarks>
     public class State
     {
         #region Properties
@@ -20,11 +27,9 @@ namespace NStateMachine
         private Transition _defaultTransition = null;
 
         /// <summary>Optional state entry action.</summary>
-        //private SmFunc _entryFunc = null;
         public SmFunc _entryFunc { get; internal set; } = null;
 
         /// <summary>Optional state exit action.</summary>
-        //private SmFunc _exitFunc = null;
         public SmFunc _exitFunc { get; internal set; } = null;
         #endregion
 
@@ -143,7 +148,7 @@ namespace NStateMachine
                 Transitions = new Dictionary<string, Transition>()
             };
 
-            // TODO Copy the transitions temporarily, ignoring the event names for now.
+            // Copy the transitions temporarily, ignoring the event names for now.
             for (int i = 0; i < transitions.Count; i++)
             {
                 state.Transitions.Add(i.ToString(), transitions[i]);
