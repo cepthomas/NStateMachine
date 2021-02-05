@@ -6,7 +6,7 @@ namespace NStateMachine
     {
         static void Main(string[] args)
         {
-            new SM_FULL_TEST().RunSuite();
+            new TestLock().Run();
         }
     }
 }

@@ -1,6 +1,5 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
-//using System.Linq;
 
 
 namespace NStateMachine
@@ -10,6 +9,22 @@ namespace NStateMachine
     /// </summary>
     /// <param name="o"></param>
     public delegate void SmFunc(object o);
+
+    /// <summary>Data carrying class. TODO Record?</summary>
+    public class EventInfo
+    {
+        /// <summary>Unique event name.</summary>
+        public string Name { get; set; } = "???";
+
+        /// <summary>Event data.</summary>
+        public object Param { get; set; } = null;
+
+        /// <summary>Generate a human readable string.</summary>
+        public override string ToString()
+        {
+            return $"Event:{Name} Param:{Param ?? "null"}";
+        }
+    }
 
     /// <summary>
     /// A generalized implementation of a state machine.
@@ -305,239 +320,4 @@ namespace NStateMachine
             return string.Join(Environment.NewLine, ls);
         }
     }
-
-    /// <summary>Describes an individual state.</summary>
-    public class State
-    {
-        #region Properties
-        /// <summary>The state name.</summary>
-        public string StateName { get; internal set; } = "???";
-
-        /// <summary>All the transitions possible for this state.</summary>
-        public Dictionary<string, Transition> Transitions { get; internal set; } = new Dictionary<string, Transition>();
-        #endregion
-
-        #region Private fields
-        /// <summary>Convenience reference to optional default transition.</summary>
-        private Transition _defaultTransition = null;
-
-        /// <summary>Optional state entry action.</summary>
-        //private SmFunc _entryFunc = null;
-        public SmFunc _entryFunc { get; internal set; } = null;
-
-        /// <summary>Optional state exit action.</summary>
-        //private SmFunc _exitFunc = null;
-        public SmFunc _exitFunc { get; internal set; } = null;
-        #endregion
-
-        #region Constructor
-        /// <summary>Main constructor.</summary>
-        /// <param name="st">Associated state name</param>
-        /// <param name="entry">Optional state entry action</param>
-        /// <param name="exit">Optional state exit action</param>
-        /// <param name="transitions">Collection of transitions for this state</param>
-        //public State(string st, SmFunc entry, SmFunc exit, params Transition[] transitions)
-        //{
-        //    StateName = st;
-        //    _entryFunc = entry;
-        //    _exitFunc = exit;
-
-        //    // Copy the transitions temporarily, ignoring the event names for now.
-        //    Transitions = new Dictionary<string, Transition>();
-        //    for (int i = 0; i < transitions.Count(); i++)
-        //    {
-        //        Transitions.Add(i.ToString(), transitions[i]);
-        //    }
-        //}
-        #endregion
-
-        #region Public methods
-        /// <summary>Initialize the state and its transitions.</summary>
-        /// <param name="stateNames">All valid state names</param>
-        /// <returns>List of any errors.</returns>
-        public List<string> Init(List<string> stateNames)
-        {
-            List<string> errors = new List<string>();
-
-            // Adjust transitions for DEFAULT_EVENT and SAME_STATE conditions.
-            // First take a copy of the current.
-            Dictionary<string, Transition> tempTrans = Transitions;
-
-            Transitions = new Dictionary<string, Transition>();
-
-            foreach (Transition t in tempTrans.Values)
-            {
-                if (string.IsNullOrEmpty(t.EventName))
-                {
-                    if (_defaultTransition is null)
-                    {
-                        _defaultTransition = t;
-                    }
-                    else
-                    {
-                        string serr = $"Duplicate Default Event defined for:{StateName}";
-                        errors.Add(serr);
-                    }
-                }
-                else
-                {
-                    if (!Transitions.ContainsKey(t.EventName))
-                    {
-                        Transitions.Add(t.EventName, t);
-                    }
-                    else
-                    {
-                        string serr = $"Duplicate Event Name:{t.EventName}";
-                        errors.Add(serr);
-                    }
-                }
-
-                // Fix any SAME_STATE to current.
-                string nextState = t.NextState;
-                if (string.IsNullOrEmpty(nextState))
-                {
-                    t.NextState = StateName;
-                }
-
-                // Is the nextState valid?
-                if (!stateNames.Contains(t.NextState))
-                {
-                    string serr = $"Undefined NextState:{ t.NextState}";
-                    errors.Add(serr);
-                }
-            }
-
-            return errors;
-        }
-
-        /// <summary>Process the event.</summary>
-        /// <param name="ei">The event information.</param>
-        /// <returns>The next state name.</returns>
-        public string ProcessEvent(EventInfo ei)
-        {
-            string nextState = null;
-
-            if (Transitions != null)
-            {
-                // Get the transition associated with the event.
-                if (!Transitions.TryGetValue(ei.Name, out Transition tx))
-                {
-                    tx = _defaultTransition;
-                }
-
-                // Execute transition if found, otherwise return the null and let the caller handle it.
-                if (tx != null)
-                {
-                    nextState = tx.Execute(ei);
-                }
-            }
-
-            return nextState;
-        }
-
-        /// <summary>Enter the state by executing the enter action</summary>
-        /// <param name="o">Optional data object</param>
-        /// <returns>void</returns>
-        public void Enter(object o)
-        {
-            _entryFunc?.Invoke(o);
-        }
-
-        /// <summary>Exit the state by executing the enter action</summary>
-        /// <param name="o">Optional data object</param>
-        /// <returns>void</returns>
-        public void Exit(object o)
-        {
-            _exitFunc?.Invoke(o);
-        }
-        #endregion
-    }
-
-    /// <summary>Specialized container. Has Add() to support initialization.</summary>
-    public class States : List<State>
-    {
-        public void Add(string stn, SmFunc entry, SmFunc exit, List<Transition> transitions)
-        {
-            var state = new State()
-            {
-                StateName = stn,
-                _entryFunc = entry,
-                _exitFunc = exit,
-                Transitions = new Dictionary<string, Transition>()
-            };
-
-            // TODO Copy the transitions temporarily, ignoring the event names for now.
-            for (int i = 0; i < transitions.Count; i++)
-            {
-                state.Transitions.Add(i.ToString(), transitions[i]);
-            }
-
-            Add(state);
-        }
-    }
-
-
-    /// <summary>Describes an individual transition.</summary>
-    public class Transition
-    {
-        /// <summary>The name of the event that triggers this transition.</summary>
-        public string EventName { get; internal set; } = null;
-
-        /// <summary>Change state to this after execution action.</summary>
-        public string NextState { get; internal set; } = null;
-
-        /// <summary>Optional action - executed before state change</summary>
-        public SmFunc TransitionFunc { get; internal set; } = null;
-
-        ///// <summary>Constructor.</summary>
-        ///// <param name="evt">Incoming event name</param>
-        ///// <param name="nextState">Next state name</param>
-        ///// <param name="trans">Optional transition action</param>
-        //public Transition(string evt, string nextState = "", SmFunc trans = null)
-        //{
-        //    EventName = evt;
-        //    NextState = nextState;
-        //    TransitionFunc = trans;
-        //}
-
-        /// <summary>Execute transition action.</summary>
-        /// <param name="ei">Event information</param>
-        /// <returns>The next state</returns>
-        public string Execute(EventInfo ei)
-        {
-            TransitionFunc?.Invoke(ei.Param);
-            return NextState;
-        }
-    }
-
-    /// <summary>Specialized container. Has Add() to support initialization.</summary>
-    public class Transitions : List<Transition>
-    {
-        public void Add(string evt, string nextState = "", SmFunc transFunc = null)
-        {
-            var trans = new Transition()
-            {
-                EventName = evt,
-                NextState = nextState,
-                TransitionFunc = transFunc
-            };
-            Add(trans);
-        }
-    }
-
-    /// <summary>Data carrying class.</summary>
-    public class EventInfo
-    {
-        /// <summary>Unique event name.</summary>
-        public string Name { get; set; } = "???";
-
-        /// <summary>Event data.</summary>
-        public object Param { get; set; } = null;
-
-        /// <summary>Generate a human readable string.</summary>
-        public override string ToString()
-        {
-            return $"Event:{Name} Param:{Param ?? "null"}";
-        }
-    }
-}
+}    
