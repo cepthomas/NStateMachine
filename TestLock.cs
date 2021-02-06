@@ -49,7 +49,7 @@ namespace NStateMachine
             IsEqual(mainDoorLock.CurrentState, "SettingCombo");
 
             // The state machine is now dead and will no longer process events.
-            IsGreater(mainDoorLock.Errors.Count, 0);
+            IsEqual(mainDoorLock.Errors.Count, 2);
 
             mainDoorLock.PressKey(CombinationLock.Keys.Key_1);
             mainDoorLock.PressKey(CombinationLock.Keys.Key_2);
@@ -83,15 +83,7 @@ namespace NStateMachine
         {
             if (value1.CompareTo(value2) != 0)
             {
-                Debug.WriteLine($">>>>> TEST [{value1}] should be [{value2}] : {file}({line})"); //TODO1 add to Trace()?
-            }
-        }
-        
-        void IsGreater<T>(T value1, T value2, [CallerFilePath] string file = "???", [CallerLineNumber] int line = -1) where T : IComparable
-        {
-            if (value1.CompareTo(value2) != 1)
-            {
-                Debug.WriteLine($">>>>> TEST [{value1}] should be greater than [{value2}] : {file}({line})");
+                Console.WriteLine($"FAIL [{value1}] should be [{value2}] : {file}({line})"); //TODO1 add to Trace()?
             }
         }
     }

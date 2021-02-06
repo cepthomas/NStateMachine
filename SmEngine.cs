@@ -22,10 +22,7 @@ namespace NStateMachine
         public object Param { get; set; } = null;
 
         /// <summary>Generate a human readable string.</summary>
-        public override string ToString()
-        {
-            return $"Event:{Name} Param:{Param ?? "null"}";
-        }
+        public override string ToString() => $"Event:{Name} Param:{Param ?? "null"}";
     }
 
     /// <summary>
@@ -42,7 +39,7 @@ namespace NStateMachine
 
         #region Fields
         /// <summary>All the states.</summary>
-        Dictionary<string, State> _states = new();
+        Dictionary<string, State> _stateMap = new();
 
         /// <summary>The default state if used.</summary>
         State _defaultState = null;
@@ -63,14 +60,12 @@ namespace NStateMachine
         #region Properties
         /// <summary>Readable version of current state.</summary>
         public string CurrentState => _currentState == null ? "" : _currentState.StateName;
-       // public string CurrentState { get { return _currentState == null ? "" : _currentState.StateName; } }
-//public readonly double Distance => Math.Sqrt(X * X + Y * Y);
 
         /// <summary>Accumulated list of errors.</summary>
-        public List<string> Errors { get; } = new();
+        public List<string> Errors = new();
 
         /// <summary>For diagnostics.</summary>
-        public TraceLevel TtraceLevel { get; set; } = TraceLevel.App;
+        public TraceLevel TraceLevel = TraceLevel.App;
         #endregion
 
         #region Public functions
@@ -104,13 +99,13 @@ namespace NStateMachine
             };
 
             // Generate actual nodes and edges from states. TODO1 options to add func names etc.
-            foreach (State s in _states.Values)
+            foreach (State s in _stateMap.Values)
             {
                 // Write a node for the state.
                 //ls.Add($"    \"{s.StateName}\";");
 
                 // Iterate through the state transitions.
-                foreach (KeyValuePair<string, Transition> kvp in s.Transitions)
+                foreach (KeyValuePair<string, Transition> kvp in s.TransitionMap)
                 {
                     Transition t = kvp.Value;
 
@@ -150,74 +145,58 @@ namespace NStateMachine
         protected bool InitSm(States states, string initialState)
         {
             Errors.Clear();
-            _states.Clear();
+            _stateMap.Clear();
             _eventQueue.Clear();
 
-            try// TODO1 patterns?
+            try // TODO1 patterns?
             {
                 ////// Populate our collection from the client.
                 foreach (State st in states)
                 {
-                    if (st.Transitions is null || st.Transitions.Count == 0)
+                    // Check for default state.
+                    if (st.StateName == DEF_STATE)
                     {
-                        Errors.Add($"No transitions for State:[{st.StateName}]");
-                    }
-                    else
-                    {
-                        // Check for default state.
-                        if(st.StateName == DEF_STATE)
+                        if (_defaultState == null)
                         {
-                            if(_defaultState == null)
-                            {
-                                st.StateName = DEF_STATE;
-                                _defaultState = st;
-                            }
-                            else
-                            {
-                                Errors.Add($"Multiple default states");
-                            }
+                            st.StateName = DEF_STATE;
+                            _defaultState = st;
                         }
                         else
                         {
-                            // Check for duplicate state names.
-                            if (!_states.ContainsKey(st.StateName))
-                            {
-                                _states.Add(st.StateName, st);
-                            }
-                            else
-                            {
-                                Errors.Add($"Duplicate State Name:[{st.StateName}]");
-                            }
+                            Errors.Add($"Multiple default states");
+                        }
+                    }
+                    else
+                    {
+                        // Check for duplicate state names.
+                        if (!_stateMap.ContainsKey(st.StateName))
+                        {
+                            _stateMap.Add(st.StateName, st);
+                        }
+                        else
+                        {
+                            Errors.Add($"Duplicate State Name:[{st.StateName}]");
                         }
                     }
                 }
 
-                if(_defaultState != null)
+                if (_defaultState != null)
                 {
-                    _states.Add("", _defaultState);
+                    _stateMap.Add(DEF_STATE, _defaultState);
                 }
 
-                //////// Sanity checking on the transitions.
-                List<string> keyList = new(_states.Keys);
+                //////// Initialize and do sanity checking.
+                List<string> keyList = new(_stateMap.Keys);
 
-                foreach (State st in _states.Values)// also _default...
+                foreach (State st in _stateMap.Values) // also _default... ??
                 {
-                    Errors.AddRange(st.Init(keyList));
+                    var err = st.Init(keyList); // the check
+                    Errors.AddRange(err);
                 }
 
-                if (!string.IsNullOrEmpty(initialState) && _states.ContainsKey(initialState))
+                if (initialState != DEF_STATE && _stateMap.ContainsKey(initialState))
                 {
-                    _currentState = _states[initialState];
-                    _currentState.Enter(null);
-                }
-                else // invalid initial state
-                {
-                    Errors.Add($"Invalid Initial State:[{initialState}]");
-                }
-
-                if (!string.IsNullOrEmpty(initialState) && _states.ContainsKey(initialState))
-                {
-                    _currentState = _states[initialState];
+                    _currentState = _stateMap[initialState];
                     _currentState.Enter(null);
                 }
                 else // invalid initial state
@@ -227,7 +206,7 @@ namespace NStateMachine
             }
             catch (Exception e)
             {
-                Errors.Add($"Exception during initializing:{e.Message} ({e.StackTrace})");
+                Errors.Add($"Exception during initializing SM:{e.Message} ({e.StackTrace})");
             }
 
             return Errors.Count == 0;
@@ -264,17 +243,18 @@ namespace NStateMachine
                             string nextStateName = null;
 
                             // Try default state first.
-                            if(_defaultState != null)
+                            if (nextStateName is null && _defaultState != null)
                             {
                                 nextStateName = _defaultState.ProcessEvent(ei);
                             }
 
+                            // No default state handler, try current state.
                             if (nextStateName is null)
                             {
-                                // Try current state.
                                 nextStateName = _currentState.ProcessEvent(ei);
                             }
 
+                            // Ooops.
                             if (nextStateName is null)
                             {
                                 throw new Exception($"State:[{_currentState.StateName}] Invalid event:[{ei.Name}]");
@@ -284,7 +264,7 @@ namespace NStateMachine
                             if (nextStateName != _currentState.StateName)
                             {
                                 // Get the next state.
-                                State nextState = _states[nextStateName];
+                                State nextState = _stateMap[nextStateName];
 
                                 // Exit current state.
                                 _currentState.Exit(ei.Param);
@@ -326,7 +306,7 @@ namespace NStateMachine
         /// <param name="s">lvl</param>
         protected void Trace(TraceLevel lvl, string s)
         {
-            if ((TtraceLevel & lvl) > 0)
+            if ((TraceLevel & lvl) > 0)
             {
                 Debug.WriteLine($"{DateTime.Now.ToString("yyyy'-'MM'-'dd HH':'mm':'ss.fff")} {lvl} {s}");
             }

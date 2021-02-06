@@ -4,15 +4,7 @@ using System.Collections.Generic;
 
 namespace NStateMachine
 {
-    /// <summary>Describes an individual transition.</summary>
-    /// <remarks>
-    /// Transitions:
-    ///  - Each transition must have an event name, except the (optional) default transition identified by null.
-    ///    If a transition for the event name is not found, the default transition is executed.
-    ///  - Each transition may have a next state name otherwise stays in the same state.
-    ///  - Each transition may have a transition action.
-    /// </remarks>
-
+    /// <summary>Describes an individual transition. See README.md.</summary>
     public class Transition
     {
         /// <summary>The name of the event that triggers this transition.</summary>
@@ -37,11 +29,11 @@ namespace NStateMachine
     /// <summary>Specialized container. Has Add() to support initialization.</summary>
     public class Transitions : List<Transition>
     {
-        public void Add(string evt, string nextState, SmFunc transFunc)
+        public void Add(string evtName, string nextState, SmFunc transFunc)
         {
             Add(new()
             {
-                EventName = evt,
+                EventName = evtName,
                 NextState = nextState,
                 TransitionFunc = transFunc
             });

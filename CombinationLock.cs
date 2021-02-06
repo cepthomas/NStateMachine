@@ -10,7 +10,54 @@ namespace NStateMachine
     /// <summary>The CombinationLock class provides both an example and a test of the state machine classes.</summary>
     public class CombinationLock : SmEngine
     {
-        #region Enums
+        /// <summary>Specify the state machine functionality.</summary>
+        void CreateMap()
+        {
+            States states = new()
+            {
+                { "Initial", InitialEnter, InitialExit, new()
+                    {{ "IsLocked",       "Locked",       NO_FUNC },
+                     { "IsUnlocked",     "Unlocked",     NO_FUNC }}
+                },
+                {
+                    "Locked", LockedEnter, NO_FUNC, new()
+                    {
+                       { "ForceFail",       SAME_STATE,     ForceFail },
+                       { "DigitKeyPressed", SAME_STATE,     LockedAddDigit },
+                       { "Reset",           SAME_STATE,     ClearCurrentEntry },
+                       { "ValidCombo",      "Unlocked",     NO_FUNC },
+                       { DEF_EVENT,         SAME_STATE,     ClearCurrentEntry } // ignore other events
+                    }
+                },
+                {
+                    "Unlocked", UnlockedEnter, NO_FUNC, new()
+                    {
+                       { "Reset",           "Locked",       ClearCurrentEntry },
+                       { "SetCombo",        "SettingCombo", ClearCurrentEntry },
+                       { DEF_EVENT,         SAME_STATE,     ClearCurrentEntry  } // ignore other events
+                    }
+                },
+                {
+                    "SettingCombo", ClearCurrentEntry, NO_FUNC, new()
+                    {
+                        { "DigitKeyPressed", SAME_STATE,    SetComboAddDigit },
+                        { "SetCombo",       "Unlocked",     SetCombo },
+                        { "Reset",          "Unlocked",     ClearCurrentEntry },
+                    }
+                },
+                {
+                    DEF_STATE, NO_FUNC, NO_FUNC, new()
+                    {
+                       { "Shutdown",        "Locked",       ResetAll },
+                       { "Bar",             "Foo",          NO_FUNC }
+                    }
+                },
+            };
+
+            bool ok = InitSm(states, "Initial"); //TODO1 check
+        }
+
+        #region Enums - as needed by application
         /// <summary>Standard 12-key keypad: 0-9, *, and # keys.</summary>
         public enum Keys
         {
@@ -28,7 +75,7 @@ namespace NStateMachine
         }
         #endregion
 
-        #region Fields
+        #region Fields - as needed by application
         /// <summary>Current combination.</summary>
         readonly List<Keys> _combination = new();
 
@@ -39,7 +86,7 @@ namespace NStateMachine
         HwLockState _hwLockState = HwLockState.HwIsLocked;
         #endregion
 
-        #region Test support public
+        #region Public API - called from main application loop
         /// <summary>Input from the keypad</summary>
         /// <param name="key">Key pressed on the keypad</param>
         public void PressKey(Keys key)
@@ -73,86 +120,18 @@ namespace NStateMachine
         }
         #endregion
 
-        #region The State Machine
-        /// <summary>Soecify the state machine functionality.</summary>
-        void CreateMap()
-        {
-            States states = new()
-            {
-                {
-                    "Initial", InitialEnter, InitialExit, new Transitions()
-                    {
-                        { "IsLocked",       "Locked",       NO_FUNC },
-                        { "IsUnlocked",     "Unlocked",     NO_FUNC }
-                    }
-                },
-                {
-                    "Locked", LockedEnter, NO_FUNC, new()
-                    {
-                       { "ForceFail",       SAME_STATE,     ForceFail },
-                       { "DigitKeyPressed", SAME_STATE,     LockedAddDigit },
-                       { "Reset",           SAME_STATE,     ClearCurrentEntry },
-                       { "ValidCombo",      "Unlocked",     NO_FUNC },
-                       { DEF_EVENT,         SAME_STATE,     ClearCurrentEntry } // ignore other events
-                    }
-                },
-                {
-                    "Unlocked", UnlockedEnter, NO_FUNC, new()
-                    {
-                       { "Reset",           "Locked",       ClearCurrentEntry },
-                       { "SetCombo",        "SettingCombo", ClearCurrentEntry },
-                       { DEF_EVENT,         "Locked",       ClearCurrentEntry  } // ignore other events
-                    }
-                },
-                {
-                    "SettingCombo", ClearCurrentEntry, NO_FUNC, new()
-                    {
-                        { "DigitKeyPressed", SAME_STATE,    SetComboAddDigit },
-                        { "SetCombo",       "Unlocked",     SetCombo },
-                        { "Reset",          "Unlocked",     ClearCurrentEntry },
-                    }
-                },
-                {
-                    DEF_STATE, NO_FUNC, NO_FUNC, new()
-                    {
-                       { "Shutdown",        "Locked",       ResetAll },
-                       { "Bar",             "Foo",          NO_FUNC }
-                    }
-                },
-            };
-
-            bool ok = InitSm(states, "Initial"); //TODO1 check
-        }
-        #endregion
-
-        #region Private functions
-        /// <summary>Energize the hardware lock to the locked position</summary>
-        void HwLock()
-        {
-            Trace(TraceLevel.App, "HwLock: Locking");
-            _hwLockState = HwLockState.HwIsLocked;
-        }
-
-        /// <summary>Energize the hardware lock to the unlocked position</summary>
-        void HwUnLock()
-        {
-            Trace(TraceLevel.App, "HwLock: Unlocking");
-            _hwLockState = HwLockState.HwIsUnlocked;
-        }
-        #endregion
-
         #region Construction
         /// <summary>Normal constructor.</summary>
         public CombinationLock()
         {
             CreateMap();
 
-            // initial combination is: 000
+            // Initial combination is: 000
             _combination = new() { Keys.Key_0, Keys.Key_0, Keys.Key_0 };
         }
         #endregion
 
-        #region Transition functions
+        #region Transition functions - private
         /// <summary>Initialize the lock</summary>
         void InitialEnter(object o)
         {
@@ -170,7 +149,7 @@ namespace NStateMachine
         void LockedEnter(object o)
         {
             Trace(TraceLevel.App, $"LockedEnter:{o}");
-            HwLock();
+            _hwLockState = HwLockState.HwIsLocked;
             _currentEntry.Clear();
         }
 
@@ -218,7 +197,7 @@ namespace NStateMachine
         void UnlockedEnter(object o)
         {
             Trace(TraceLevel.App, $"UnlockedEnter:{o}");
-            HwUnLock();
+            _hwLockState = HwLockState.HwIsUnlocked;
         }
 
         /// <summary>Cause an exception to be thrown.</summary>
@@ -232,7 +211,7 @@ namespace NStateMachine
         void ResetAll(object o)
         {
             Trace(TraceLevel.App, $"ClearCurrentEntry:{o}");
-            HwLock();
+            _hwLockState = HwLockState.HwIsLocked;
             _currentEntry.Clear();
         }
         #endregion

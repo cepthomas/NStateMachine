@@ -4,33 +4,29 @@ using System.Collections.Generic;
 
 namespace NStateMachine
 {
-    /// <summary>Describes an individual state.</summary>
-    /// <remarks>
-    /// States:
-    /// - Each state must have a name, except the (optional) default state identified by null.
-    ///   The default state is checked first, then the current state.
-    /// - Each state must have one or more Transitions.
-    /// - Each state may have an enter and/or exit action executed on state changes.
-    /// </remarks>
+    /// <summary>Describes an individual state. See README.md.</summary>
     public class State
     {
         #region Properties
         /// <summary>The state name.</summary>
         public string StateName { get; internal set; } = "???";
 
-        /// <summary>All the transitions possible for this state.</summary>
-        public Dictionary<string, Transition> Transitions { get; init; } = new();
-        #endregion
-
-        #region Private fields
-        /// <summary>Convenience reference to optional default transition.</summary>
-        private Transition _defaultTransition = null;
-
         /// <summary>Optional state entry action.</summary>
-        public SmFunc _entryFunc { get; init; } = null;
+        public SmFunc EntryFunc { get; init; } = null;
 
         /// <summary>Optional state exit action.</summary>
-        public SmFunc _exitFunc { get; init; } = null;
+        public SmFunc ExitFunc { get; init; } = null;
+
+        /// <summary>All the transitions possible for this state. Only used for initialization.</summary>
+        public Transitions Transitions { get; init; } = null;
+
+        /// <summary>Massaged runtime version of Transitions.</summary>
+        public Dictionary<string, Transition> TransitionMap { get; init; } = new();
+        #endregion
+
+        #region Fields
+        /// <summary>Convenience reference to optional default transition.</summary>
+        private Transition _defaultTransition = null;
         #endregion
 
         #region Public methods
@@ -41,15 +37,22 @@ namespace NStateMachine
         {
             List<string> errors = new();
 
-            // Adjust transitions for DEFAULT_EVENT and SAME_STATE conditions.
-            // First take a copy of the current.
-            Dictionary<string, Transition> tempTrans = Transitions;
+            // Basic sanity check.
+            if (Transitions.Count == 0)
+            {
+                errors.Add($"No transitions for State:[{StateName}]");
+            }
 
-            Transitions.Clear();
+            ///// Adjust transitions for DEFAULT_EVENT and SAME_STATE conditions.
+
+            // Copy the transitions temporarily, ignoring the event names for now.
+            Dictionary<string, Transition> tempTrans = new();
+            Transitions.ForEach(t => { tempTrans.Add(tempTrans.Count.ToString(), t); });
 
             foreach (Transition t in tempTrans.Values)
             {
-                if (string.IsNullOrEmpty(t.EventName))
+                // Handle default condition. TODO1 patterns
+                if (t.EventName == SmEngine.DEF_STATE)
                 {
                     if (_defaultTransition is null)
                     {
@@ -63,9 +66,10 @@ namespace NStateMachine
                 }
                 else
                 {
-                    if (!Transitions.ContainsKey(t.EventName))
+                    // Add to final map.
+                    if (!TransitionMap.ContainsKey(t.EventName))
                     {
-                        Transitions.Add(t.EventName, t);
+                        TransitionMap.Add(t.EventName, t);
                     }
                     else
                     {
@@ -76,7 +80,7 @@ namespace NStateMachine
 
                 // Fix any SAME_STATE to current.
                 string nextState = t.NextState;
-                if (string.IsNullOrEmpty(nextState))
+                if(nextState == SmEngine.SAME_STATE)
                 {
                     t.NextState = StateName;
                 }
@@ -99,10 +103,10 @@ namespace NStateMachine
         {
             string nextState = null;
 
-            if (Transitions != null)
+            if (TransitionMap != null)
             {
                 // Get the transition associated with the event.
-                if (!Transitions.TryGetValue(ei.Name, out Transition tx))
+                if (!TransitionMap.TryGetValue(ei.Name, out Transition tx))
                 {
                     tx = _defaultTransition;
                 }
@@ -122,7 +126,7 @@ namespace NStateMachine
         /// <returns>void</returns>
         public void Enter(object o)
         {
-            _entryFunc?.Invoke(o);
+            EntryFunc?.Invoke(o);
         }
 
         /// <summary>Exit the state by executing the enter action</summary>
@@ -130,7 +134,7 @@ namespace NStateMachine
         /// <returns>void</returns>
         public void Exit(object o)
         {
-            _exitFunc?.Invoke(o);
+            ExitFunc?.Invoke(o);
         }
         #endregion
     }
@@ -140,21 +144,13 @@ namespace NStateMachine
     {
         public void Add(string stn, SmFunc entry, SmFunc exit, Transitions transitions)
         {
-            State state = new()
+           Add(new()
             {
                 StateName = stn,
-                _entryFunc = entry,
-                _exitFunc = exit,
-                Transitions = new()
-            };
-
-            // Copy the transitions temporarily, ignoring the event names for now.
-            for (int i = 0; i < transitions.Count; i++)
-            {
-                state.Transitions.Add(i.ToString(), transitions[i]);
-            }
-
-            Add(state);
+                EntryFunc = entry,
+                ExitFunc = exit,
+                Transitions = transitions
+            });
         }
     }
 }    
