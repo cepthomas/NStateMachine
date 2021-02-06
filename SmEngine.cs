@@ -42,7 +42,7 @@ namespace NStateMachine
 
         #region Fields
         /// <summary>All the states.</summary>
-        Dictionary<string, State> _states = new Dictionary<string, State>();
+        Dictionary<string, State> _states = new();
 
         /// <summary>The default state if used.</summary>
         State _defaultState = null;
@@ -51,10 +51,10 @@ namespace NStateMachine
         State _currentState = null;
 
         /// <summary>The event queue.</summary>
-        Queue<EventInfo> _eventQueue = new Queue<EventInfo>();
+        Queue<EventInfo> _eventQueue = new();
 
         /// <summary>Queue serializing access.</summary>
-        object _locker = new object();
+        object _locker = new();
 
         /// <summary>Flag to handle recursion in event processing.</summary>
         bool _processingEvents = false;
@@ -62,10 +62,12 @@ namespace NStateMachine
 
         #region Properties
         /// <summary>Readable version of current state.</summary>
-        public string CurrentState { get { return _currentState == null ? "" : _currentState.StateName; } }
+        public string CurrentState => _currentState == null ? "" : _currentState.StateName;
+       // public string CurrentState { get { return _currentState == null ? "" : _currentState.StateName; } }
+//public readonly double Distance => Math.Sqrt(X * X + Y * Y);
 
         /// <summary>Accumulated list of errors.</summary>
-        public List<string> Errors { get; } = new List<string>();
+        public List<string> Errors { get; } = new();
 
         /// <summary>For diagnostics.</summary>
         public TraceLevel TtraceLevel { get; set; } = TraceLevel.App;
@@ -78,7 +80,7 @@ namespace NStateMachine
         /// <returns>Returns a string that contains the DOT markup.</returns>
         public string GenerateDot()
         {
-            List<string> ls = new List<string>
+            List<string> ls = new()
             {
                 "digraph StateDiagram {",
                 // Init attributes for dot.
@@ -151,15 +153,14 @@ namespace NStateMachine
             _states.Clear();
             _eventQueue.Clear();
 
-            try
+            try// TODO1 patterns?
             {
                 ////// Populate our collection from the client.
                 foreach (State st in states)
                 {
                     if (st.Transitions is null || st.Transitions.Count == 0)
                     {
-                        string serr = $"No transitions for State:{st.StateName}";
-                        Errors.Add(serr);
+                        Errors.Add($"No transitions for State:[{st.StateName}]");
                     }
                     else
                     {
@@ -173,8 +174,7 @@ namespace NStateMachine
                             }
                             else
                             {
-                                string serr = $"Multiple default states";
-                                Errors.Add(serr);
+                                Errors.Add($"Multiple default states");
                             }
                         }
                         else
@@ -186,8 +186,7 @@ namespace NStateMachine
                             }
                             else
                             {
-                                string serr = $"Duplicate State Name:{st.StateName}";
-                                Errors.Add(serr);
+                                Errors.Add($"Duplicate State Name:[{st.StateName}]");
                             }
                         }
                     }
@@ -199,7 +198,7 @@ namespace NStateMachine
                 }
 
                 //////// Sanity checking on the transitions.
-                List<string> keyList = new List<string>(_states.Keys);
+                List<string> keyList = new(_states.Keys);
 
                 foreach (State st in _states.Values)// also _default...
                 {
@@ -213,8 +212,7 @@ namespace NStateMachine
                 }
                 else // invalid initial state
                 {
-                    string serr = $"Invalid Initial State:{initialState}";
-                    Errors.Add(serr);
+                    Errors.Add($"Invalid Initial State:[{initialState}]");
                 }
 
                 if (!string.IsNullOrEmpty(initialState) && _states.ContainsKey(initialState))
@@ -224,14 +222,12 @@ namespace NStateMachine
                 }
                 else // invalid initial state
                 {
-                    string serr = $"Invalid Initial State:{initialState}";
-                    Errors.Add(serr);
+                    Errors.Add($"Invalid Initial State:[{initialState}]");
                 }
             }
             catch (Exception e)
             {
-                string serr = $"Exception during initializing:{e.Message} ({e.StackTrace})";
-                Errors.Add(serr);
+                Errors.Add($"Exception during initializing:{e.Message} ({e.StackTrace})");
             }
 
             return Errors.Count == 0;
@@ -251,14 +247,14 @@ namespace NStateMachine
             lock (_locker)
             {
                 // Add the event to the queue.
-                _eventQueue.Enqueue(new EventInfo() { Name = evt, Param = o });
+                _eventQueue.Enqueue(new() { Name = evt, Param = o });
 
                 // Check for recursion through the processing loop - event may be generated internally during processing.
                 if (!_processingEvents)
                 {
                     _processingEvents = true;
 
-                    // Process all events in the event queue.
+                    // Process all events in the event queue. // TODO1 patterns?
                     while (_eventQueue.Count > 0 && ok)
                     {
                         EventInfo ei = _eventQueue.Dequeue();
@@ -281,7 +277,7 @@ namespace NStateMachine
 
                             if (nextStateName is null)
                             {
-                                throw new Exception($"State: {_currentState.StateName} Invalid event: {ei.Name}");
+                                throw new Exception($"State:[{_currentState.StateName}] Invalid event:[{ei.Name}]");
                             }
 
                             // Is there a state change?

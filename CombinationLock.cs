@@ -30,10 +30,10 @@ namespace NStateMachine
 
         #region Fields
         /// <summary>Current combination.</summary>
-        readonly List<Keys> _combination = new List<Keys>();
+        readonly List<Keys> _combination = new();
 
         /// <summary>Where we are in the entered sequence.</summary>
-        readonly List<Keys> _currentEntry = new List<Keys>();
+        readonly List<Keys> _currentEntry = new();
 
         /// <summary>Current state of the hardware Lock</summary>
         HwLockState _hwLockState = HwLockState.HwIsLocked;
@@ -77,7 +77,7 @@ namespace NStateMachine
         /// <summary>Soecify the state machine functionality.</summary>
         void CreateMap()
         {
-            States states = new States()
+            States states = new()
             {
                 {
                     "Initial", InitialEnter, InitialExit, new Transitions()
@@ -87,7 +87,7 @@ namespace NStateMachine
                     }
                 },
                 {
-                    "Locked", LockedEnter, NO_FUNC, new Transitions()
+                    "Locked", LockedEnter, NO_FUNC, new()
                     {
                        { "ForceFail",       SAME_STATE,     ForceFail },
                        { "DigitKeyPressed", SAME_STATE,     LockedAddDigit },
@@ -97,7 +97,7 @@ namespace NStateMachine
                     }
                 },
                 {
-                    "Unlocked", UnlockedEnter, NO_FUNC, new Transitions()
+                    "Unlocked", UnlockedEnter, NO_FUNC, new()
                     {
                        { "Reset",           "Locked",       ClearCurrentEntry },
                        { "SetCombo",        "SettingCombo", ClearCurrentEntry },
@@ -105,7 +105,7 @@ namespace NStateMachine
                     }
                 },
                 {
-                    "SettingCombo", ClearCurrentEntry, NO_FUNC, new Transitions()
+                    "SettingCombo", ClearCurrentEntry, NO_FUNC, new()
                     {
                         { "DigitKeyPressed", SAME_STATE,    SetComboAddDigit },
                         { "SetCombo",       "Unlocked",     SetCombo },
@@ -113,7 +113,7 @@ namespace NStateMachine
                     }
                 },
                 {
-                    DEF_STATE, NO_FUNC, NO_FUNC, new Transitions()
+                    DEF_STATE, NO_FUNC, NO_FUNC, new()
                     {
                        { "Shutdown",        "Locked",       ResetAll },
                        { "Bar",             "Foo",          NO_FUNC }
@@ -148,7 +148,7 @@ namespace NStateMachine
             CreateMap();
 
             // initial combination is: 000
-            _combination = new List<Keys>() { Keys.Key_0, Keys.Key_0, Keys.Key_0 };
+            _combination = new() { Keys.Key_0, Keys.Key_0, Keys.Key_0 };
         }
         #endregion
 

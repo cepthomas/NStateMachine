@@ -39,13 +39,12 @@ namespace NStateMachine
     {
         public void Add(string evt, string nextState, SmFunc transFunc)
         {
-            var trans = new Transition()
+            Add(new()
             {
                 EventName = evt,
                 NextState = nextState,
                 TransitionFunc = transFunc
-            };
-            Add(trans);
+            });
         }
     }
 }    

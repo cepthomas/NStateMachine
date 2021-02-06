@@ -19,7 +19,7 @@ namespace NStateMachine
         public string StateName { get; internal set; } = "???";
 
         /// <summary>All the transitions possible for this state.</summary>
-        public Dictionary<string, Transition> Transitions { get; internal set; } = new Dictionary<string, Transition>();
+        public Dictionary<string, Transition> Transitions { get; init; } = new();
         #endregion
 
         #region Private fields
@@ -27,10 +27,10 @@ namespace NStateMachine
         private Transition _defaultTransition = null;
 
         /// <summary>Optional state entry action.</summary>
-        public SmFunc _entryFunc { get; internal set; } = null;
+        public SmFunc _entryFunc { get; init; } = null;
 
         /// <summary>Optional state exit action.</summary>
-        public SmFunc _exitFunc { get; internal set; } = null;
+        public SmFunc _exitFunc { get; init; } = null;
         #endregion
 
         #region Public methods
@@ -39,13 +39,13 @@ namespace NStateMachine
         /// <returns>List of any errors.</returns>
         public List<string> Init(List<string> stateNames)
         {
-            List<string> errors = new List<string>();
+            List<string> errors = new();
 
             // Adjust transitions for DEFAULT_EVENT and SAME_STATE conditions.
             // First take a copy of the current.
             Dictionary<string, Transition> tempTrans = Transitions;
 
-            Transitions = new Dictionary<string, Transition>();
+            Transitions.Clear();
 
             foreach (Transition t in tempTrans.Values)
             {
@@ -138,14 +138,14 @@ namespace NStateMachine
     /// <summary>Specialized container. Has Add() to support initialization.</summary>
     public class States : List<State>
     {
-        public void Add(string stn, SmFunc entry, SmFunc exit, List<Transition> transitions)
+        public void Add(string stn, SmFunc entry, SmFunc exit, Transitions transitions)
         {
-            var state = new State()
+            State state = new()
             {
                 StateName = stn,
                 _entryFunc = entry,
                 _exitFunc = exit,
-                Transitions = new Dictionary<string, Transition>()
+                Transitions = new()
             };
 
             // Copy the transitions temporarily, ignoring the event names for now.

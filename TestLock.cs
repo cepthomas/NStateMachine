@@ -12,7 +12,7 @@ namespace NStateMachine
         public void Run()
         {
             // Create a new lock.
-            CombinationLock mainDoorLock = new CombinationLock();
+            CombinationLock mainDoorLock = new();
 
             // Should come up in the locked state.
             IsEqual(mainDoorLock.CurrentState, "Locked");
@@ -68,7 +68,7 @@ namespace NStateMachine
             {
                 string sdot = mainDoorLock.GenerateDot();
                 File.WriteAllText("testout.gv", sdot);
-                Process p = new Process();
+                using Process p = new();
                 p.StartInfo.FileName = "dot";
                 p.StartInfo.Arguments = "-Tpng testout.gv -o testout.png";
                 bool ok = p.Start();
@@ -83,9 +83,10 @@ namespace NStateMachine
         {
             if (value1.CompareTo(value2) != 0)
             {
-                Debug.WriteLine($">>>>> TEST [{value1}] should be [{value2}] : {file}({line})");
+                Debug.WriteLine($">>>>> TEST [{value1}] should be [{value2}] : {file}({line})"); //TODO1 add to Trace()?
             }
         }
+        
         void IsGreater<T>(T value1, T value2, [CallerFilePath] string file = "???", [CallerLineNumber] int line = -1) where T : IComparable
         {
             if (value1.CompareTo(value2) != 1)
