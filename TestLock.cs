@@ -5,13 +5,14 @@ using System.IO;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
 
+
 namespace NStateMachine
 {
     public class TestLock
     {
         public void Run()
         {
-            // Create a new lock.
+            // Create a new combo lock.
             CombinationLock mainDoorLock = new();
 
             // Should come up in the locked state.

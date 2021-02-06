@@ -2,6 +2,16 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 
+
+
+// TODO1 new stuff:
+
+// New patterns
+
+// You can use the ??= operator to assign the value of its right-hand operand to its left-hand operand only if the left-hand operand evaluates to null.
+// ?? returns the value of its left-hand operand if it isn't null; otherwise, it evaluates the right-hand operand and returns its result.
+
+
 namespace NStateMachine
 {
     /// <summary>Definition for transition/entry/exit functions.</summary>
@@ -10,24 +20,12 @@ namespace NStateMachine
 
     /// <summary>Logging.</summary>
     [Flags]
-    public enum TraceLevel { None = 0, App = 1, Engine = 2 }
+    public enum TraceLevel { None = 0, App = 1, Eng = 2 }
 
-    /// <summary>Data carrying class. TODO1 use Record?</summary>
-    public class EventInfo
-    {
-        /// <summary>Unique event name.</summary>
-        public string Name { get; set; } = "???";
+    /// <summary>Data carrying class.</summary>
+    public record EventInfo(string Name, object Param);
 
-        /// <summary>Event data.</summary>
-        public object Param { get; set; } = null;
-
-        /// <summary>Generate a human readable string.</summary>
-        public override string ToString() => $"Event:{Name} Param:{Param ?? "null"}";
-    }
-
-    /// <summary>
-    /// Agnostic core engine of a state machine.
-    /// </summary>
+    /// <summary>Agnostic core engine of a state machine.</summary>
     public class SmEngine
     {
         #region Constants to make maps prettier
@@ -62,10 +60,10 @@ namespace NStateMachine
         public string CurrentState => _currentState == null ? "" : _currentState.StateName;
 
         /// <summary>Accumulated list of errors.</summary>
-        public List<string> Errors = new();
+        public List<string> Errors { get; init; } = new();
 
         /// <summary>For diagnostics.</summary>
-        public TraceLevel TraceLevel = TraceLevel.App;
+        public TraceLevel TraceLevel { get; set; } = TraceLevel.App;
         #endregion
 
         #region Public functions
@@ -219,14 +217,14 @@ namespace NStateMachine
         /// <param name="evt">Incoming event.</param>
         /// <param name="o">Optional event data.</param>
         /// <returns>Ok or error.</returns>
-        protected bool ProcessEvent(string evt, object o = null)
+        protected bool ProcessEvent(string evt, object o = null) // TODO1 Trace for sm events
         {
             bool ok = true;
 
             lock (_locker)
             {
                 // Add the event to the queue.
-                _eventQueue.Enqueue(new() { Name = evt, Param = o });
+                _eventQueue.Enqueue(new EventInfo(evt, o));
 
                 // Check for recursion through the processing loop - event may be generated internally during processing.
                 if (!_processingEvents)
@@ -276,7 +274,7 @@ namespace NStateMachine
                                 _currentState.Enter(ei.Param);
                             }
                         }
-                        catch (Exception e) //TODO1 better run time handling - ask client?
+                        catch (Exception e) // TODO1 better run time handling - ask client?
                         {
                             // Add to the list of errors.
                             Errors.Add(e.Message);

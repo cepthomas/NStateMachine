@@ -16,8 +16,10 @@ namespace NStateMachine
             States states = new()
             {
                 { "Initial", InitialEnter, InitialExit, new()
-                    {{ "IsLocked",       "Locked",       NO_FUNC },
-                     { "IsUnlocked",     "Unlocked",     NO_FUNC }}
+                    {
+                        { "IsLocked",       "Locked",       NO_FUNC },
+                        { "IsUnlocked",     "Unlocked",     NO_FUNC }
+                    }
                 },
                 {
                     "Locked", LockedEnter, NO_FUNC, new()
@@ -76,8 +78,8 @@ namespace NStateMachine
         #endregion
 
         #region Fields - as needed by application
-        /// <summary>Current combination.</summary>
-        readonly List<Keys> _combination = new();
+        /// <summary>Current combination. Initial combination is: 000.</summary>
+        readonly List<Keys> _combination = new() { Keys.Key_0, Keys.Key_0, Keys.Key_0 };
 
         /// <summary>Where we are in the entered sequence.</summary>
         readonly List<Keys> _currentEntry = new();
@@ -87,13 +89,19 @@ namespace NStateMachine
         #endregion
 
         #region Public API - called from main application loop
+        /// <summary>Normal constructor.</summary>
+        public CombinationLock()
+        {
+            CreateMap();
+        }
+
         /// <summary>Input from the keypad</summary>
         /// <param name="key">Key pressed on the keypad</param>
         public void PressKey(Keys key)
         {
             Trace(TraceLevel.App, $"KeyPressed:{key}");
 
-            switch (key)
+            switch (key) //TODO1 patterns
             {
                 case Keys.Key_Reset:
                     ProcessEvent("Reset", key);
@@ -117,17 +125,6 @@ namespace NStateMachine
         public void InjectBadEvent()
         {
             ProcessEvent("NGEVENT", false);
-        }
-        #endregion
-
-        #region Construction
-        /// <summary>Normal constructor.</summary>
-        public CombinationLock()
-        {
-            CreateMap();
-
-            // Initial combination is: 000
-            _combination = new() { Keys.Key_0, Keys.Key_0, Keys.Key_0 };
         }
         #endregion
 
@@ -200,19 +197,19 @@ namespace NStateMachine
             _hwLockState = HwLockState.HwIsUnlocked;
         }
 
-        /// <summary>Cause an exception to be thrown.</summary>
-        void ForceFail(object o)
-        {
-            Trace(TraceLevel.App, "ForceFail");
-            throw new Exception("ForceFail");
-        }
-
         /// <summary>Clear the lock.</summary>
         void ResetAll(object o)
         {
             Trace(TraceLevel.App, $"ClearCurrentEntry:{o}");
             _hwLockState = HwLockState.HwIsLocked;
             _currentEntry.Clear();
+        }
+
+        /// <summary>Cause an exception to be thrown.</summary>
+        void ForceFail(object o)
+        {
+            Trace(TraceLevel.App, "ForceFail");
+            throw new Exception("ForceFail");
         }
         #endregion
     }

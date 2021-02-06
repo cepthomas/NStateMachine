@@ -26,17 +26,10 @@ namespace NStateMachine
         }
     }
 
-    /// <summary>Specialized container. Has Add() to support initialization.</summary>
+    /// <summary>Specialized container. Has Add() to support cleaner initialization.</summary>
     public class Transitions : List<Transition>
     {
-        public void Add(string evtName, string nextState, SmFunc transFunc)
-        {
-            Add(new()
-            {
-                EventName = evtName,
-                NextState = nextState,
-                TransitionFunc = transFunc
-            });
-        }
+        public void Add(string evtName, string nextState, SmFunc transFunc) =>
+            Add(new() { EventName = evtName, NextState = nextState, TransitionFunc = transFunc });
     }
 }    

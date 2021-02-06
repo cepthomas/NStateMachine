@@ -20,7 +20,7 @@ namespace NStateMachine
         /// <summary>All the transitions possible for this state. Only used for initialization.</summary>
         public Transitions Transitions { get; init; } = null;
 
-        /// <summary>Massaged runtime version of Transitions.</summary>
+        /// <summary>Massaged runtime version of Transitions. Key is event name.</summary>
         public Dictionary<string, Transition> TransitionMap { get; init; } = new();
         #endregion
 
@@ -29,7 +29,7 @@ namespace NStateMachine
         private Transition _defaultTransition = null;
         #endregion
 
-        #region Public methods
+        #region Public functions
         /// <summary>Initialize the state and its transitions.</summary>
         /// <param name="stateNames">All valid state names</param>
         /// <returns>List of any errors.</returns>
@@ -124,33 +124,19 @@ namespace NStateMachine
         /// <summary>Enter the state by executing the enter action</summary>
         /// <param name="o">Optional data object</param>
         /// <returns>void</returns>
-        public void Enter(object o)
-        {
-            EntryFunc?.Invoke(o);
-        }
+        public void Enter(object o) => EntryFunc?.Invoke(o);
 
         /// <summary>Exit the state by executing the enter action</summary>
         /// <param name="o">Optional data object</param>
         /// <returns>void</returns>
-        public void Exit(object o)
-        {
-            ExitFunc?.Invoke(o);
-        }
+        public void Exit(object o) => ExitFunc?.Invoke(o);
         #endregion
     }
 
-    /// <summary>Specialized container. Has Add() to support initialization.</summary>
+    /// <summary>Specialized container. Has Add() to support cleaner initialization.</summary>
     public class States : List<State>
     {
-        public void Add(string stn, SmFunc entry, SmFunc exit, Transitions transitions)
-        {
-           Add(new()
-            {
-                StateName = stn,
-                EntryFunc = entry,
-                ExitFunc = exit,
-                Transitions = transitions
-            });
-        }
+        public void Add(string stn, SmFunc entry, SmFunc exit, Transitions transitions) =>
+           Add(new() { StateName = stn, EntryFunc = entry, ExitFunc = exit, Transitions = transitions });
     }
 }    
