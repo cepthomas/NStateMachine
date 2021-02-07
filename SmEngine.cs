@@ -3,14 +3,10 @@ using System.Collections.Generic;
 using System.Diagnostics;
 
 
-
-// TODO1 new stuff:
-
-// New patterns
-
-// You can use the ??= operator to assign the value of its right-hand operand to its left-hand operand only if the left-hand operand evaluates to null.
+// TODO  You can use the ??= operator to assign the value of its right-hand operand to its left-hand operand only if
+// the left-hand operand evaluates to null.
 // ?? returns the value of its left-hand operand if it isn't null; otherwise, it evaluates the right-hand operand and returns its result.
-
+// FormsAuth = formsAuth ?? new FormsAuthenticationWrapper();
 
 namespace NStateMachine
 {
@@ -96,7 +92,7 @@ namespace NStateMachine
                 ""
             };
 
-            // Generate actual nodes and edges from states. TODO1 options to add func names etc.
+            // Generate actual nodes and edges from states. TODO options to add func names etc.
             foreach (State s in _stateMap.Values)
             {
                 // Write a node for the state.
@@ -135,7 +131,7 @@ namespace NStateMachine
 
         #region Private and protected functions
         /// <summary>
-        /// Init everything. Also does validation of the definitions at the same time.
+        /// Init and validate the definitions.
         /// </summary>
         /// <param name="states">All the states.</param>
         /// <param name="initialState">Initial state.</param>
@@ -146,11 +142,14 @@ namespace NStateMachine
             _stateMap.Clear();
             _eventQueue.Clear();
 
-            try // TODO1 patterns?
+            try // TODO patterns or simplify?
             {
-                ////// Populate our collection from the client.
+                // Populate our collection from the client.
                 foreach (State st in states)
                 {
+
+
+
                     // Check for default state.
                     if (st.StateName == DEF_STATE)
                     {
@@ -183,10 +182,10 @@ namespace NStateMachine
                     _stateMap.Add(DEF_STATE, _defaultState);
                 }
 
-                //////// Initialize and do sanity checking.
+                // Initialize states and do sanity checking.
                 List<string> keyList = new(_stateMap.Keys);
 
-                foreach (State st in _stateMap.Values) // also _default... ??
+                foreach (State st in _stateMap.Values)
                 {
                     var err = st.Init(keyList); // the check
                     Errors.AddRange(err);
@@ -217,7 +216,7 @@ namespace NStateMachine
         /// <param name="evt">Incoming event.</param>
         /// <param name="o">Optional event data.</param>
         /// <returns>Ok or error.</returns>
-        protected bool ProcessEvent(string evt, object o = null) // TODO1 Trace for sm events
+        protected bool ProcessEvent(string evt, object o = null) // TODO Trace for sm events
         {
             bool ok = true;
 
@@ -231,7 +230,7 @@ namespace NStateMachine
                 {
                     _processingEvents = true;
 
-                    // Process all events in the event queue. // TODO1 patterns?
+                    // Process all events in the event queue. // TODO patterns or simplify?
                     while (_eventQueue.Count > 0 && ok)
                     {
                         EventInfo ei = _eventQueue.Dequeue();
@@ -246,7 +245,7 @@ namespace NStateMachine
                                 nextStateName = _defaultState.ProcessEvent(ei);
                             }
 
-                            // No default state handler, try current state.
+                            // No default state handler for this event, try current state.
                             if (nextStateName is null)
                             {
                                 nextStateName = _currentState.ProcessEvent(ei);
@@ -274,7 +273,7 @@ namespace NStateMachine
                                 _currentState.Enter(ei.Param);
                             }
                         }
-                        catch (Exception e) // TODO1 better run time handling - ask client?
+                        catch (Exception e) // TODO better run time handling - ask client?
                         {
                             // Add to the list of errors.
                             Errors.Add(e.Message);

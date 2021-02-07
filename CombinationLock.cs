@@ -56,7 +56,7 @@ namespace NStateMachine
                 },
             };
 
-            bool ok = InitSm(states, "Initial"); //TODO1 check
+            bool ok = InitSm(states, "Initial"); //TODO check
         }
 
         #region Enums - as needed by application
@@ -101,24 +101,13 @@ namespace NStateMachine
         {
             Trace(TraceLevel.App, $"KeyPressed:{key}");
 
-            switch (key) //TODO1 patterns
+            bool ok = key switch
             {
-                case Keys.Key_Reset:
-                    ProcessEvent("Reset", key);
-                    break;
-
-                case Keys.Key_Set:
-                    ProcessEvent("SetCombo", key);
-                    break;
-
-                case Keys.Key_Power:
-                    ProcessEvent("Shutdown", key);
-                    break;
-
-                default:
-                    ProcessEvent("DigitKeyPressed", key);
-                    break;
-            }
+              Keys.Key_Reset    => ProcessEvent("Reset", key),
+              Keys.Key_Set      => ProcessEvent("SetCombo", key),
+              Keys.Key_Power    => ProcessEvent("Shutdown", key),
+              _                 => ProcessEvent("DigitKeyPressed", key)
+            };
         }
 
         /// <summary>Only for testing.</summary>

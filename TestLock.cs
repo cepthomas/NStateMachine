@@ -74,9 +74,9 @@ namespace NStateMachine
                 p.StartInfo.Arguments = "-Tpng testout.gv -o testout.png";
                 bool ok = p.Start();
             }
-            catch (Exception)
+            catch (Exception e)
             {
-                //TODO1 handle
+                IsEqual(e.Message, "Shouldn't happen");
             }
         }
 
@@ -84,7 +84,7 @@ namespace NStateMachine
         {
             if (value1.CompareTo(value2) != 0)
             {
-                Console.WriteLine($"FAIL [{value1}] should be [{value2}] : {file}({line})"); //TODO1 add to Trace()?
+                Console.WriteLine($"FAIL [{value1}] should be [{value2}] : {file}({line})"); //TODO add to Trace()?
             }
         }
     }

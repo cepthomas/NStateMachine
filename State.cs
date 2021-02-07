@@ -43,7 +43,7 @@ namespace NStateMachine
                 errors.Add($"No transitions for State:[{StateName}]");
             }
 
-            ///// Adjust transitions for DEFAULT_EVENT and SAME_STATE conditions.
+            // Adjust transitions for DEFAULT_EVENT and SAME_STATE values.
 
             // Copy the transitions temporarily, ignoring the event names for now.
             Dictionary<string, Transition> tempTrans = new();
@@ -51,7 +51,55 @@ namespace NStateMachine
 
             foreach (Transition t in tempTrans.Values)
             {
-                // Handle default condition. TODO1 patterns
+
+                //Tuple patterns
+                string first = "ddd";
+                string second = "eee";
+                string s = (first, second) switch
+                {
+                    ("rock", "paper") => "rock is covered by paper. Paper wins.",
+                    ("rock", "scissors") => "rock breaks scissors. Rock wins.",
+                    ("paper", "rock") => "paper covers rock. Paper wins.",
+                    ("paper", "scissors") => "paper is cut by scissors. Scissors wins.",
+                    ("scissors", "rock") => "scissors is broken by rock. Rock wins.",
+                    ("scissors", "paper") => "scissors cuts paper. Scissors wins.",
+                    (_, _) => "tie"
+                };
+
+                //Keys key
+                //bool ok = key switch
+                //{
+                //    Keys.Key_Reset => ProcessEvent("Reset", key),
+                //    Keys.Key_Set => ProcessEvent("SetCombo", key),
+                //    Keys.Key_Power => ProcessEvent("Shutdown", key),
+                //    _ => ProcessEvent("DigitKeyPressed", key)
+                //};
+
+
+                //public static T ExhaustiveExample<T>(IEnumerable<T> sequence) =>
+                //List<string> sequence = new();
+                //var v = sequence switch
+                //{
+                //    Array { Length: 0 } => default(T),
+                //    Array { Length: 1 } array => (T)array.GetValue(0),
+                //    Array { Length: 2 } array => (T)array.GetValue(1),
+                //    Array array => (T)array.GetValue(2),
+                //    IEnumerable<T> list when !list.Any() => default(T),
+                //    IEnumerable<T> list when list.Count() < 3 => list.Last(),
+                //    IList<T> list => list[2],
+                //    null => throw new ArgumentNullException(nameof(sequence)),
+                //    _ => sequence.Skip(2).First(),
+                //};
+                //The preceding example adds a null pattern, and changes the IEnumerable<T> type pattern to a _ pattern.
+                //The null pattern provides a null check as a switch expression arm.The expression for that arm throws an
+                //ArgumentNullException.The _ pattern matches all inputs that haven't been matched by previous arms. It must
+                //come after the null check, or it would match null inputs.
+
+
+
+
+
+                // Handle default condition. TODO patterns or simplify?
                 if (t.EventName == SmEngine.DEF_STATE)
                 {
                     if (_defaultTransition is null)
@@ -60,8 +108,7 @@ namespace NStateMachine
                     }
                     else
                     {
-                        string serr = $"Duplicate Default Event defined for:{StateName}";
-                        errors.Add(serr);
+                        errors.Add($"Duplicate Default Event defined for:{StateName}");
                     }
                 }
                 else
@@ -73,14 +120,12 @@ namespace NStateMachine
                     }
                     else
                     {
-                        string serr = $"Duplicate Event Name:{t.EventName}";
-                        errors.Add(serr);
+                        errors.Add($"Duplicate Event Name:{t.EventName}");
                     }
                 }
 
                 // Fix any SAME_STATE to current.
-                string nextState = t.NextState;
-                if(nextState == SmEngine.SAME_STATE)
+                if(t.NextState == SmEngine.SAME_STATE)
                 {
                     t.NextState = StateName;
                 }
@@ -88,47 +133,29 @@ namespace NStateMachine
                 // Is the nextState valid?
                 if (!stateNames.Contains(t.NextState))
                 {
-                    string serr = $"Undefined NextState:{ t.NextState}";
-                    errors.Add(serr);
+                    errors.Add($"Undefined NextState:{ t.NextState}");
                 }
             }
 
             return errors;
         }
 
-        /// <summary>Process the event.</summary>
+        /// <summary>Process the event. Execute transition if found, otherwise return null and let the caller handle it.</summary>
         /// <param name="ei">The event information.</param>
         /// <returns>The next state name.</returns>
         public string ProcessEvent(EventInfo ei)
         {
-            string nextState = null;
-
-            if (TransitionMap != null)
-            {
-                // Get the transition associated with the event.
-                if (!TransitionMap.TryGetValue(ei.Name, out Transition tx))
-                {
-                    tx = _defaultTransition;
-                }
-
-                // Execute transition if found, otherwise return the null and let the caller handle it.
-                if (tx != null)
-                {
-                    nextState = tx.Execute(ei);
-                }
-            }
-
-            return nextState;
+            // Get the transition associated with the event or default.
+            var tx = TransitionMap.GetValueOrDefault(ei.Name, _defaultTransition);
+            return tx?.Execute(ei);
         }
 
         /// <summary>Enter the state by executing the enter action</summary>
         /// <param name="o">Optional data object</param>
-        /// <returns>void</returns>
         public void Enter(object o) => EntryFunc?.Invoke(o);
 
         /// <summary>Exit the state by executing the enter action</summary>
         /// <param name="o">Optional data object</param>
-        /// <returns>void</returns>
         public void Exit(object o) => ExitFunc?.Invoke(o);
         #endregion
     }
