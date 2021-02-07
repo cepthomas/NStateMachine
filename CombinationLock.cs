@@ -11,7 +11,7 @@ namespace NStateMachine
     public class CombinationLock : SmEngine
     {
         /// <summary>Specify the state machine functionality.</summary>
-        void CreateMap()
+        int CreateMap()
         {
             States states = new()
             {
@@ -28,7 +28,7 @@ namespace NStateMachine
                        { "DigitKeyPressed", SAME_STATE,     LockedAddDigit },
                        { "Reset",           SAME_STATE,     ClearCurrentEntry },
                        { "ValidCombo",      "Unlocked",     NO_FUNC },
-                       { DEF_EVENT,         SAME_STATE,     ClearCurrentEntry } // ignore other events
+                    //   { DEF_EVENT,         SAME_STATE,     ClearCurrentEntry } // ignore other events
                     }
                 },
                 {
@@ -50,13 +50,14 @@ namespace NStateMachine
                 {
                     DEF_STATE, NO_FUNC, NO_FUNC, new()
                     {
-                       { "Shutdown",        "Locked",       ResetAll },
-                       { "Bar",             "Foo",          NO_FUNC }
+                        { "Shutdown",       "Locked",       ResetAll },
+                        { "Bar",            "Foo",          NO_FUNC },
+                        { DEF_EVENT,        SAME_STATE,     UnexpectedEvent }
                     }
                 },
             };
 
-            bool ok = InitSm(states, "Initial"); //TODO check
+            return InitSm(states, "Initial");
         }
 
         #region Enums - as needed by application
@@ -89,24 +90,27 @@ namespace NStateMachine
         #endregion
 
         #region Public API - called from main application loop
-        /// <summary>Normal constructor.</summary>
-        public CombinationLock()
+
+        /// <summary>
+        /// Initialize the map.
+        /// </summary>
+        /// <returns>Number of syntax errors.</returns>
+        public int Init()
         {
-            CreateMap();
+            return CreateMap();
         }
 
         /// <summary>Input from the keypad</summary>
         /// <param name="key">Key pressed on the keypad</param>
         public void PressKey(Keys key)
         {
-            Trace(TraceLevel.App, $"KeyPressed:{key}");
-
-            bool ok = key switch
+            Trace(TraceLevel.APPRT, $"KeyPressed:{key}");
+            _ = key switch
             {
-              Keys.Key_Reset    => ProcessEvent("Reset", key),
-              Keys.Key_Set      => ProcessEvent("SetCombo", key),
-              Keys.Key_Power    => ProcessEvent("Shutdown", key),
-              _                 => ProcessEvent("DigitKeyPressed", key)
+                Keys.Key_Reset => ProcessEvent("Reset", key),
+                Keys.Key_Set => ProcessEvent("SetCombo", key),
+                Keys.Key_Power => ProcessEvent("Shutdown", key),
+                _ => ProcessEvent("DigitKeyPressed", key)
             };
         }
 
@@ -121,20 +125,20 @@ namespace NStateMachine
         /// <summary>Initialize the lock</summary>
         void InitialEnter(object o)
         {
-            Trace(TraceLevel.App, $"InitialEnter:{o}");
+            Trace(TraceLevel.APPRT, $"InitialEnter:{o}");
             ProcessEvent(_hwLockState == HwLockState.HwIsLocked ? "IsLocked" : "IsUnlocked");
         }
 
         /// <summary>Dummy function</summary>
         void InitialExit(object o)
         {
-            Trace(TraceLevel.App, $"InitialExit:{o}");
+            Trace(TraceLevel.APPRT, $"InitialExit:{o}");
         }
 
         /// <summary>Locked transition function.</summary>
         void LockedEnter(object o)
         {
-            Trace(TraceLevel.App, $"LockedEnter:{o}");
+            Trace(TraceLevel.APPRT, $"LockedEnter:{o}");
             _hwLockState = HwLockState.HwIsLocked;
             _currentEntry.Clear();
         }
@@ -142,14 +146,14 @@ namespace NStateMachine
         /// <summary>Clear the lock</summary>
         void ClearCurrentEntry(object o)
         {
-            Trace(TraceLevel.App, $"ClearCurrentEntry:{o}");
+            Trace(TraceLevel.APPRT, $"ClearCurrentEntry:{o}");
             _currentEntry.Clear();
         }
 
         /// <summary>Add a digit to the current sequence.</summary>
         void LockedAddDigit(object o)
         {
-            Trace(TraceLevel.App, $"LockedAddDigit:{o}");
+            Trace(TraceLevel.APPRT, $"LockedAddDigit:{o}");
             Keys key = (Keys)o;
 
             _currentEntry.Add(key);
@@ -162,7 +166,7 @@ namespace NStateMachine
         /// <summary>Add a digit to the current sequence.</summary>
         void SetComboAddDigit(object o)
         {
-            Trace(TraceLevel.App, $"SetComboAddDigit:{o}");
+            Trace(TraceLevel.APPRT, $"SetComboAddDigit:{o}");
             Keys key = (Keys)o;
             _currentEntry.Add(key);
         }
@@ -170,7 +174,7 @@ namespace NStateMachine
         /// <summary>Try setting a new combination.</summary>
         void SetCombo(object o)
         {
-            Trace(TraceLevel.App, $"SetCombo:{o}");
+            Trace(TraceLevel.APPRT, $"SetCombo:{o}");
             if (_currentEntry.Count > 0)
             {
                 _combination.Clear();
@@ -182,14 +186,14 @@ namespace NStateMachine
         /// <summary>Lock is unlocked now.</summary>
         void UnlockedEnter(object o)
         {
-            Trace(TraceLevel.App, $"UnlockedEnter:{o}");
+            Trace(TraceLevel.APPRT, $"UnlockedEnter:{o}");
             _hwLockState = HwLockState.HwIsUnlocked;
         }
 
         /// <summary>Clear the lock.</summary>
         void ResetAll(object o)
         {
-            Trace(TraceLevel.App, $"ClearCurrentEntry:{o}");
+            Trace(TraceLevel.APPRT, $"ClearCurrentEntry:{o}");
             _hwLockState = HwLockState.HwIsLocked;
             _currentEntry.Clear();
         }
@@ -197,8 +201,15 @@ namespace NStateMachine
         /// <summary>Cause an exception to be thrown.</summary>
         void ForceFail(object o)
         {
-            Trace(TraceLevel.App, "ForceFail");
+            Trace(TraceLevel.APPRT, "ForceFail");
             throw new Exception("ForceFail");
+        }
+
+        /// <summary>Runtime bad event. Do something app-specific.</summary>
+        void UnexpectedEvent(object o)
+        {
+            Trace(TraceLevel.APPRT, "UnexpectedEvent");
+            //throw new Exception("UnexpectedEvent");
         }
         #endregion
     }

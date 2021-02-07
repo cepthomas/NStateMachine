@@ -3,20 +3,15 @@ using System.Collections.Generic;
 using System.Diagnostics;
 
 
-// TODO  You can use the ??= operator to assign the value of its right-hand operand to its left-hand operand only if
-// the left-hand operand evaluates to null.
-// ?? returns the value of its left-hand operand if it isn't null; otherwise, it evaluates the right-hand operand and returns its result.
-// FormsAuth = formsAuth ?? new FormsAuthenticationWrapper();
-
 namespace NStateMachine
 {
     /// <summary>Definition for transition/entry/exit functions.</summary>
-    /// <param name="o"></param>
+    /// <param name="o">Optional data.</param>
     public delegate void SmFunc(object o);
 
     /// <summary>Logging.</summary>
     [Flags]
-    public enum TraceLevel { None = 0, App = 1, Eng = 2 }
+    public enum TraceLevel { NONE = 0x00, APPSM = 0x01, APPRT = 0x02, ENGRT = 0x04, TESTF = 0x08, OTHER = 0x10, ALL = 0xFFFF }
 
     /// <summary>Data carrying class.</summary>
     public record EventInfo(string Name, object Param);
@@ -26,14 +21,14 @@ namespace NStateMachine
     {
         #region Constants to make maps prettier
         public const SmFunc NO_FUNC = null;
-        public const string DEF_STATE = "DEFAULT";
+        public const string DEF_STATE = "DEF_STATE";
         public const string SAME_STATE = "";
-        public const string DEF_EVENT = "DEFAULT";
+        public const string DEF_EVENT = "DEF_EVENT";
         #endregion
 
         #region Fields
         /// <summary>All the states.</summary>
-        Dictionary<string, State> _stateMap = new();
+        readonly Dictionary<string, State> _stateMap = new();
 
         /// <summary>The default state if used.</summary>
         State _defaultState = null;
@@ -42,27 +37,38 @@ namespace NStateMachine
         State _currentState = null;
 
         /// <summary>The event queue.</summary>
-        Queue<EventInfo> _eventQueue = new();
+        readonly Queue<EventInfo> _eventQueue = new();
 
         /// <summary>Queue serializing access.</summary>
-        object _locker = new();
+        readonly object _locker = new();
 
         /// <summary>Flag to handle recursion in event processing.</summary>
         bool _processingEvents = false;
+
+        /// <summary>State machine syntax errors.</summary>
+        int _smErrors = 0;
         #endregion
 
         #region Properties
         /// <summary>Readable version of current state.</summary>
         public string CurrentState => _currentState == null ? "" : _currentState.StateName;
 
-        /// <summary>Accumulated list of errors.</summary>
-        public List<string> Errors { get; init; } = new();
-
         /// <summary>For diagnostics.</summary>
-        public TraceLevel TraceLevel { get; set; } = TraceLevel.App;
+        public TraceLevel TraceLevel { get; set; } = TraceLevel.NONE;
         #endregion
 
         #region Public functions
+        /// <summary>Adjust to taste. Public so clients can inject traces.</summary>
+        /// <param name="lvl">Filter</param>
+        /// <param name="s">What to add.</param>
+        public void Trace(TraceLevel lvl, string s)
+        {
+            if ((TraceLevel & lvl) > 0)
+            {
+                Debug.WriteLine($"{DateTime.Now:yyyy'-'MM'-'dd HH':'mm':'ss.fff} {lvl} {s}");
+            }
+        }
+
         /// <summary>
         /// Generate DOT markup.
         /// </summary>
@@ -92,7 +98,7 @@ namespace NStateMachine
                 ""
             };
 
-            // Generate actual nodes and edges from states. TODO options to add func names etc.
+            // Generate actual nodes and edges from states. TODO options to add func names etc. Also DEF_EVENT not handled.
             foreach (State s in _stateMap.Values)
             {
                 // Write a node for the state.
@@ -135,78 +141,77 @@ namespace NStateMachine
         /// </summary>
         /// <param name="states">All the states.</param>
         /// <param name="initialState">Initial state.</param>
-        /// <returns>Initialization success.</returns>
-        protected bool InitSm(States states, string initialState)
+        /// <returns>Number of syntax errors.</returns>
+        protected int InitSm(States states, string initialState)
         {
-            Errors.Clear();
+            _smErrors = 0;
             _stateMap.Clear();
             _eventQueue.Clear();
 
-            try // TODO patterns or simplify?
+            // Populate our collection from the client.
+            foreach (State st in states)
             {
-                // Populate our collection from the client.
-                foreach (State st in states)
+                // Check for default state.
+                if (st.StateName == DEF_STATE)
                 {
-
-
-
-                    // Check for default state.
-                    if (st.StateName == DEF_STATE)
+                    if (_defaultState == null)
                     {
-                        if (_defaultState == null)
-                        {
-                            st.StateName = DEF_STATE;
-                            _defaultState = st;
-                        }
-                        else
-                        {
-                            Errors.Add($"Multiple default states");
-                        }
+                        _defaultState = st;
                     }
                     else
                     {
-                        // Check for duplicate state names.
-                        if (!_stateMap.ContainsKey(st.StateName))
-                        {
-                            _stateMap.Add(st.StateName, st);
-                        }
-                        else
-                        {
-                            Errors.Add($"Duplicate State Name:[{st.StateName}]");
-                        }
+                        SmError($"Multiple Default States");
                     }
                 }
-
-                if (_defaultState != null)
+                else
                 {
-                    _stateMap.Add(DEF_STATE, _defaultState);
-                }
-
-                // Initialize states and do sanity checking.
-                List<string> keyList = new(_stateMap.Keys);
-
-                foreach (State st in _stateMap.Values)
-                {
-                    var err = st.Init(keyList); // the check
-                    Errors.AddRange(err);
-                }
-
-                if (initialState != DEF_STATE && _stateMap.ContainsKey(initialState))
-                {
-                    _currentState = _stateMap[initialState];
-                    _currentState.Enter(null);
-                }
-                else // invalid initial state
-                {
-                    Errors.Add($"Invalid Initial State:[{initialState}]");
+                    // Check for duplicate state names.
+                    if (!_stateMap.ContainsKey(st.StateName))
+                    {
+                        _stateMap.Add(st.StateName, st);
+                    }
+                    else
+                    {
+                        SmError($"Duplicate StateName[{st.StateName}]");
+                    }
                 }
             }
-            catch (Exception e)
+
+            if (_defaultState != null)
             {
-                Errors.Add($"Exception during initializing SM:{e.Message} ({e.StackTrace})");
+                _stateMap.Add(DEF_STATE, _defaultState);
             }
 
-            return Errors.Count == 0;
+            // Initialize states and do sanity checking.
+            List<string> keyList = new(_stateMap.Keys);
+
+            // Errors in state inits?
+            foreach (State st in _stateMap.Values)
+            {
+                st.Init(keyList).ForEach(e => SmError(e));
+            }
+
+            if (initialState != DEF_STATE && _stateMap.ContainsKey(initialState))
+            {
+                _currentState = _stateMap[initialState];
+                _currentState.Enter(null);
+            }
+            else // invalid initial state
+            {
+                SmError($"Invalid Initial State[{initialState}]");
+            }
+
+            return _smErrors;
+        }
+
+        /// <summary>
+        /// Handler for syntax errors.
+        /// </summary>
+        /// <param name="s"></param>
+        void SmError(string s)
+        {
+            Trace(TraceLevel.APPSM, s);
+            _smErrors++;
         }
 
         /// <summary>
@@ -216,12 +221,14 @@ namespace NStateMachine
         /// <param name="evt">Incoming event.</param>
         /// <param name="o">Optional event data.</param>
         /// <returns>Ok or error.</returns>
-        protected bool ProcessEvent(string evt, object o = null) // TODO Trace for sm events
+        protected bool ProcessEvent(string evt, object o = null)
         {
             bool ok = true;
 
             lock (_locker)
             {
+                Trace(TraceLevel.ENGRT, $"ProcessEvent:{evt}:{o}");
+
                 // Add the event to the queue.
                 _eventQueue.Enqueue(new EventInfo(evt, o));
 
@@ -230,63 +237,29 @@ namespace NStateMachine
                 {
                     _processingEvents = true;
 
-                    // Process all events in the event queue. // TODO patterns or simplify?
+                    // Process all events in the event queue.
                     while (_eventQueue.Count > 0 && ok)
                     {
                         EventInfo ei = _eventQueue.Dequeue();
-                        try
+                        // Dig out the correct transition if there is one.
+                        string nextStateName = null;
+
+                        // Try current state.
+                        nextStateName ??= _currentState.ProcessEvent(ei);
+
+                        // Try default state.
+                        nextStateName ??= _defaultState.ProcessEvent(ei);
+
+                        // Ooops.
+                        nextStateName ??= DEF_STATE;
+
+                        // Is there a state change?
+                        if (nextStateName != _currentState.StateName)
                         {
-                            // Dig out the correct transition if there is one.
-                            string nextStateName = null;
-
-                            // Try default state first.
-                            if (nextStateName is null && _defaultState != null)
-                            {
-                                nextStateName = _defaultState.ProcessEvent(ei);
-                            }
-
-                            // No default state handler for this event, try current state.
-                            if (nextStateName is null)
-                            {
-                                nextStateName = _currentState.ProcessEvent(ei);
-                            }
-
-                            // Ooops.
-                            if (nextStateName is null)
-                            {
-                                throw new Exception($"State:[{_currentState.StateName}] Invalid event:[{ei.Name}]");
-                            }
-
-                            // Is there a state change?
-                            if (nextStateName != _currentState.StateName)
-                            {
-                                // Get the next state.
-                                State nextState = _stateMap[nextStateName];
-
-                                // Exit current state.
-                                _currentState.Exit(ei.Param);
-
-                                // Set new state.
-                                _currentState = nextState;
-
-                                // Enter new state.
-                                _currentState.Enter(ei.Param);
-                            }
-                        }
-                        catch (Exception e) // TODO better run time handling - ask client?
-                        {
-                            // Add to the list of errors.
-                            Errors.Add(e.Message);
-
-                            // Set the return status.
-                            ok = false;
-
-                            // Clean up.
-                            _eventQueue.Clear();
-                            _processingEvents = false;
-
-                            // Rethrow.
-                            //throw;
+                            State nextState = _stateMap[nextStateName];
+                            _currentState.Exit(ei.Param);
+                            _currentState = nextState;
+                            _currentState.Enter(ei.Param);
                         }
                     }
                 }
@@ -295,17 +268,6 @@ namespace NStateMachine
                 _processingEvents = false;
 
                 return ok;
-            }
-        }
-
-        /// <summary>Adjust to taste.</summary>
-        /// <param name="s"></param>
-        /// <param name="s">lvl</param>
-        protected void Trace(TraceLevel lvl, string s)
-        {
-            if ((TraceLevel & lvl) > 0)
-            {
-                Debug.WriteLine($"{DateTime.Now.ToString("yyyy'-'MM'-'dd HH':'mm':'ss.fff")} {lvl} {s}");
             }
         }
         #endregion

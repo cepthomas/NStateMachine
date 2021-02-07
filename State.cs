@@ -38,69 +38,17 @@ namespace NStateMachine
             List<string> errors = new();
 
             // Basic sanity check.
-            if (Transitions.Count == 0)
-            {
-                errors.Add($"No transitions for State:[{StateName}]");
-            }
+            if (Transitions.Count == 0) { errors.Add($"No transitions for State[{StateName}]"); }
 
-            // Adjust transitions for DEFAULT_EVENT and SAME_STATE values.
-
+            // Adjust transitions for DEF_STATE and SAME_STATE values.
             // Copy the transitions temporarily, ignoring the event names for now.
             Dictionary<string, Transition> tempTrans = new();
             Transitions.ForEach(t => { tempTrans.Add(tempTrans.Count.ToString(), t); });
 
             foreach (Transition t in tempTrans.Values)
             {
-
-                //Tuple patterns
-                string first = "ddd";
-                string second = "eee";
-                string s = (first, second) switch
-                {
-                    ("rock", "paper") => "rock is covered by paper. Paper wins.",
-                    ("rock", "scissors") => "rock breaks scissors. Rock wins.",
-                    ("paper", "rock") => "paper covers rock. Paper wins.",
-                    ("paper", "scissors") => "paper is cut by scissors. Scissors wins.",
-                    ("scissors", "rock") => "scissors is broken by rock. Rock wins.",
-                    ("scissors", "paper") => "scissors cuts paper. Scissors wins.",
-                    (_, _) => "tie"
-                };
-
-                //Keys key
-                //bool ok = key switch
-                //{
-                //    Keys.Key_Reset => ProcessEvent("Reset", key),
-                //    Keys.Key_Set => ProcessEvent("SetCombo", key),
-                //    Keys.Key_Power => ProcessEvent("Shutdown", key),
-                //    _ => ProcessEvent("DigitKeyPressed", key)
-                //};
-
-
-                //public static T ExhaustiveExample<T>(IEnumerable<T> sequence) =>
-                //List<string> sequence = new();
-                //var v = sequence switch
-                //{
-                //    Array { Length: 0 } => default(T),
-                //    Array { Length: 1 } array => (T)array.GetValue(0),
-                //    Array { Length: 2 } array => (T)array.GetValue(1),
-                //    Array array => (T)array.GetValue(2),
-                //    IEnumerable<T> list when !list.Any() => default(T),
-                //    IEnumerable<T> list when list.Count() < 3 => list.Last(),
-                //    IList<T> list => list[2],
-                //    null => throw new ArgumentNullException(nameof(sequence)),
-                //    _ => sequence.Skip(2).First(),
-                //};
-                //The preceding example adds a null pattern, and changes the IEnumerable<T> type pattern to a _ pattern.
-                //The null pattern provides a null check as a switch expression arm.The expression for that arm throws an
-                //ArgumentNullException.The _ pattern matches all inputs that haven't been matched by previous arms. It must
-                //come after the null check, or it would match null inputs.
-
-
-
-
-
-                // Handle default condition. TODO patterns or simplify?
-                if (t.EventName == SmEngine.DEF_STATE)
+                // Handle default condition.
+                if (t.EventName == SmEngine.DEF_EVENT)
                 {
                     if (_defaultTransition is null)
                     {
@@ -108,7 +56,7 @@ namespace NStateMachine
                     }
                     else
                     {
-                        errors.Add($"Duplicate Default Event defined for:{StateName}");
+                        errors.Add($"Duplicate Default Event for State[{StateName}]");
                     }
                 }
                 else
@@ -120,12 +68,12 @@ namespace NStateMachine
                     }
                     else
                     {
-                        errors.Add($"Duplicate Event Name:{t.EventName}");
+                        errors.Add($"Duplicate EventName[{t.EventName}] for State[{StateName}]");
                     }
                 }
 
                 // Fix any SAME_STATE to current.
-                if(t.NextState == SmEngine.SAME_STATE)
+                if (t.NextState == SmEngine.SAME_STATE)
                 {
                     t.NextState = StateName;
                 }
@@ -133,7 +81,7 @@ namespace NStateMachine
                 // Is the nextState valid?
                 if (!stateNames.Contains(t.NextState))
                 {
-                    errors.Add($"Undefined NextState:{ t.NextState}");
+                    errors.Add($"Undefined NextState[{t.NextState}] for Event[{ t.EventName}] for State[{StateName}");
                 }
             }
 
