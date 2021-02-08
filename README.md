@@ -4,6 +4,8 @@ Targets .NET 5. No dependencies on third party components.
 
 Probably I should make this into a nuget package at some point.
 
+System.Linq not used. Because.
+
 - Semi-hierarchical state machine for .NET.
 - Generates diagrams via dot.
 

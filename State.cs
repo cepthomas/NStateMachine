@@ -105,6 +105,9 @@ namespace NStateMachine
         /// <summary>Exit the state by executing the enter action</summary>
         /// <param name="o">Optional data object</param>
         public void Exit(object o) => ExitFunc?.Invoke(o);
+
+        /// <summary>Readable version.</summary>
+        public override string ToString() => StateName;
         #endregion
     }
 

@@ -24,6 +24,9 @@ namespace NStateMachine
             TransitionFunc?.Invoke(ei.Param);
             return NextState;
         }
+
+        /// <summary>Readable version.</summary>
+        public override string ToString() => $"{EventName} -> {NextState}";
     }
 
     /// <summary>Specialized container. Has Add() to support cleaner initialization.</summary>

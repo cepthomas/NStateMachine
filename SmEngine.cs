@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-
+using System.Reflection;
 
 namespace NStateMachine
 {
@@ -22,11 +22,14 @@ namespace NStateMachine
         #region Constants to make maps prettier
         public const SmFunc NO_FUNC = null;
         public const string DEF_STATE = "DEF_STATE";
-        public const string SAME_STATE = "";
+        public const string SAME_STATE = "SAME_STATE";
         public const string DEF_EVENT = "DEF_EVENT";
         #endregion
 
         #region Fields
+        /// <summary?The original.</summary>
+        States _states = null;
+
         /// <summary>All the states.</summary>
         readonly Dictionary<string, State> _stateMap = new();
 
@@ -77,56 +80,42 @@ namespace NStateMachine
         {
             List<string> ls = new()
             {
-                "digraph StateDiagram {",
                 // Init attributes for dot.
+                "digraph StateDiagram {",
                 "    ratio=\"compress\";",
                 "    fontname=\"Arial\";",
                 "    label=\"\";", // (your label here!)
                 "    node [",
-                "    height=\"0.50\";",
-                "    width=\"1.0\";",
+                "    height=\"1\";",
+                "    width=\"2\";",
                 "    shape=\"ellipse\";",
                 "    fixedsize=\"true\";",
-                "    fontsize=\"8\";",
+                "    fontsize=\"10\";",
                 "    fontname=\"Arial\";",
-                "];",
+                "    ];",
                 "",
                 "    edge [",
-                "    fontsize=\"8\";",
+                "    fontsize=\"10\";",
                 "    fontname=\"Arial\";",
-                "];",
+                "    ];",
                 ""
             };
 
-            // Generate actual nodes and edges from states. TODO options to add func names etc. Also DEF_EVENT not handled.
-            foreach (State s in _stateMap.Values)
+            // Generate actual nodes and edges from states. Use original spec for this, not our adjusted runtime version.
+            foreach (State st in _states)
             {
-                // Write a node for the state.
-                //ls.Add($"    \"{s.StateName}\";");
-
                 // Iterate through the state transitions.
-                foreach (KeyValuePair<string, Transition> kvp in s.TransitionMap)
+                foreach (Transition t in st.Transitions)
                 {
-                    Transition t = kvp.Value;
-
-                    // Get event name, but strip off "Transition" suffix if present to save space.
-                    //string transitionSuffix = "Transition";
-                    string eventName = t.EventName;
-                    //if (eventName.EndsWith(transitionSuffix))
-                    //{
-                    //    eventName = eventName.Substring(0, eventName.Length - transitionSuffix.Length);
-                    //}
+                    // Get func name if pertinent.
+                    var sf = t.GetType().GetProperty("TransitionFunc");
+                    var fn = sf.GetValue(t, null);
+                    string funcname = fn is not null ? $"\n{(fn as SmFunc).Method.Name}()" : "";
+                    string eventName = $"{t.EventName}{funcname}";
 
                     // Write an edge for the transition
-                    string nextState = t.NextState;
-                    //if (nextState == "SAME_STATE")
-                    //{
-                    //    nextState = s.StateName;
-                    //}
-                    ls.Add($"        \"{s.StateName}\" -> \"{nextState}\" [label=\"{eventName}\"];");
+                    ls.Add($"        \"{st.StateName}\" -> \"{t.NextState}\" [label=\"{eventName}\"];");
                 }
-
-                //ls.Add("{0}");
             }
 
             ls.Add("}");
@@ -144,6 +133,7 @@ namespace NStateMachine
         /// <returns>Number of syntax errors.</returns>
         protected int InitSm(States states, string initialState)
         {
+            _states = states;
             _smErrors = 0;
             _stateMap.Clear();
             _eventQueue.Clear();

@@ -1,9 +1,6 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.IO;
-using System.Diagnostics;
-using System.Runtime.CompilerServices;
+
 
 namespace NStateMachine
 {
@@ -28,7 +25,6 @@ namespace NStateMachine
                        { "DigitKeyPressed", SAME_STATE,     LockedAddDigit },
                        { "Reset",           SAME_STATE,     ClearCurrentEntry },
                        { "ValidCombo",      "Unlocked",     NO_FUNC },
-                    //   { DEF_EVENT,         SAME_STATE,     ClearCurrentEntry } // ignore other events
                     }
                 },
                 {
@@ -157,9 +153,20 @@ namespace NStateMachine
             Keys key = (Keys)o;
 
             _currentEntry.Add(key);
-            if (_currentEntry.SequenceEqual(_combination))
+
+            // Yes, Linq would be easier...
+            if(_currentEntry.Count == _combination.Count)
             {
-                ProcessEvent("ValidCombo");
+                bool valid = true;
+                for (int i = 0; i < _currentEntry.Count && valid; i++)
+                {
+                    valid = _currentEntry[i] == _combination[i];
+                }
+
+                if(valid)
+                {
+                    ProcessEvent("ValidCombo");
+                }
             }
         }
 
