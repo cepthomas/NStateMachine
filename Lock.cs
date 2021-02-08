@@ -4,8 +4,8 @@ using System.Collections.Generic;
 
 namespace NStateMachine
 {
-    /// <summary>The CombinationLock class provides both an example and a test of the state machine classes.</summary>
-    public class CombinationLock : SmEngine
+    /// <summary>An example state machine implementing a standard combination lock.</summary>
+    public class Lock : SmEngine
     {
         /// <summary>Specify the state machine functionality.</summary>
         int CreateMap()
@@ -32,7 +32,7 @@ namespace NStateMachine
                     {
                        { "Reset",           "Locked",       ClearCurrentEntry },
                        { "SetCombo",        "SettingCombo", ClearCurrentEntry },
-                       { DEF_EVENT,         SAME_STATE,     ClearCurrentEntry  } // ignore other events
+                       { DEF_EVENT,         SAME_STATE,     ClearCurrentEntry } // ignore other events
                     }
                 },
                 {
@@ -56,8 +56,8 @@ namespace NStateMachine
             return InitSm(states, "Initial");
         }
 
-        #region Enums - as needed by application
-        /// <summary>Standard 12-key keypad: 0-9, *, and # keys.</summary>
+        #region Context data for application
+        /// <summary>Standard keypad with control functions.</summary>
         public enum Keys
         {
             Key_0 = '0', Key_1, Key_2, Key_3, Key_4, Key_5, Key_6, Key_7, Key_8, Key_9,
@@ -66,30 +66,18 @@ namespace NStateMachine
             Key_Power = '!',
         }
 
-        /// <summary>State of the hardware lock</summary>
-        public enum HwLockState
-        {
-            HwIsLocked,
-            HwIsUnlocked
-        }
-        #endregion
-
-        #region Fields - as needed by application
         /// <summary>Current combination. Initial combination is: 000.</summary>
         readonly List<Keys> _combination = new() { Keys.Key_0, Keys.Key_0, Keys.Key_0 };
 
         /// <summary>Where we are in the entered sequence.</summary>
         readonly List<Keys> _currentEntry = new();
 
-        /// <summary>Current state of the hardware Lock</summary>
-        HwLockState _hwLockState = HwLockState.HwIsLocked;
+        /// <summary>Current state of the lock.</summary>
+        bool _isLocked = true;
         #endregion
 
         #region Public API - called from main application loop
-
-        /// <summary>
-        /// Initialize the map.
-        /// </summary>
+        /// <summary>Initialize the map.</summary>
         /// <returns>Number of syntax errors.</returns>
         public int Init()
         {
@@ -101,19 +89,20 @@ namespace NStateMachine
         public void PressKey(Keys key)
         {
             Trace(TraceLevel.APPRT, $"KeyPressed:{key}");
+
             _ = key switch
             {
-                Keys.Key_Reset => ProcessEvent("Reset", key),
-                Keys.Key_Set => ProcessEvent("SetCombo", key),
-                Keys.Key_Power => ProcessEvent("Shutdown", key),
-                _ => ProcessEvent("DigitKeyPressed", key)
+                Keys.Key_Reset  => ProcessEvent("Reset", key),
+                Keys.Key_Set    => ProcessEvent("SetCombo", key),
+                Keys.Key_Power  => ProcessEvent("Shutdown", key),
+                _               => ProcessEvent("DigitKeyPressed", key)
             };
         }
 
         /// <summary>Only for testing.</summary>
         public void InjectBadEvent()
         {
-            ProcessEvent("NGEVENT", false);
+            ProcessEvent("BAD_EVENT", false);
         }
         #endregion
 
@@ -122,7 +111,7 @@ namespace NStateMachine
         void InitialEnter(object o)
         {
             Trace(TraceLevel.APPRT, $"InitialEnter:{o}");
-            ProcessEvent(_hwLockState == HwLockState.HwIsLocked ? "IsLocked" : "IsUnlocked");
+            ProcessEvent(_isLocked ? "IsLocked" : "IsUnlocked");
         }
 
         /// <summary>Dummy function</summary>
@@ -135,7 +124,7 @@ namespace NStateMachine
         void LockedEnter(object o)
         {
             Trace(TraceLevel.APPRT, $"LockedEnter:{o}");
-            _hwLockState = HwLockState.HwIsLocked;
+            _isLocked = true;
             _currentEntry.Clear();
         }
 
@@ -154,19 +143,16 @@ namespace NStateMachine
 
             _currentEntry.Add(key);
 
-            // Yes, Linq would be easier...
-            if(_currentEntry.Count == _combination.Count)
+            // Is the combination complete?
+            bool valid = _currentEntry.Count == _combination.Count;
+            for (int i = 0; i < _currentEntry.Count && valid; i++)
             {
-                bool valid = true;
-                for (int i = 0; i < _currentEntry.Count && valid; i++)
-                {
-                    valid = _currentEntry[i] == _combination[i];
-                }
+                valid = _currentEntry[i] == _combination[i];
+            }
 
-                if(valid)
-                {
-                    ProcessEvent("ValidCombo");
-                }
+            if(valid)
+            {
+                ProcessEvent("ValidCombo");
             }
         }
 
@@ -194,14 +180,14 @@ namespace NStateMachine
         void UnlockedEnter(object o)
         {
             Trace(TraceLevel.APPRT, $"UnlockedEnter:{o}");
-            _hwLockState = HwLockState.HwIsUnlocked;
+            _isLocked = false;
         }
 
         /// <summary>Clear the lock.</summary>
         void ResetAll(object o)
         {
             Trace(TraceLevel.APPRT, $"ClearCurrentEntry:{o}");
-            _hwLockState = HwLockState.HwIsLocked;
+            _isLocked = true;
             _currentEntry.Clear();
         }
 

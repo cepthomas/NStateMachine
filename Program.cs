@@ -1,4 +1,4 @@
 ﻿using System;
 
 // New: Top-level statement.
-new NStateMachine.TestLock().Run();
+new NStateMachine.LockTest().Run();

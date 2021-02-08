@@ -16,7 +16,7 @@ namespace NStateMachine
     /// <summary>Data carrying class.</summary>
     public record EventInfo(string Name, object Param);
 
-    /// <summary>Agnostic core engine of a state machine.</summary>
+    /// <summary>Agnostic core engine of the state machine.</summary>
     public class SmEngine
     {
         #region Constants to make maps prettier

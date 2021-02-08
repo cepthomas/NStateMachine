@@ -7,9 +7,9 @@ using System.Runtime.CompilerServices;
 
 namespace NStateMachine
 {
-    public class TestLock
+    public class LockTest
     {
-        CombinationLock _lock = null;
+        Lock _lock = null;
 
         public void Run()
         {
@@ -22,45 +22,45 @@ namespace NStateMachine
             IsEqual(_lock.CurrentState, "Locked");
 
             // Enter the default combination of 000.
-            _lock.PressKey(CombinationLock.Keys.Key_0);
+            _lock.PressKey(Lock.Keys.Key_0);
             IsEqual(_lock.CurrentState, "Locked");
-            _lock.PressKey(CombinationLock.Keys.Key_0);
+            _lock.PressKey(Lock.Keys.Key_0);
             IsEqual(_lock.CurrentState, "Locked");
-            _lock.PressKey(CombinationLock.Keys.Key_0);
+            _lock.PressKey(Lock.Keys.Key_0);
             // Should now be unlocked.
             IsEqual(_lock.CurrentState, "Unlocked");
 
             // Test the default handler. Should stay in the same state.
-            _lock.PressKey(CombinationLock.Keys.Key_5);
+            _lock.PressKey(Lock.Keys.Key_5);
             IsEqual(_lock.CurrentState, "Unlocked");
 
             // Lock it again.
-            _lock.PressKey(CombinationLock.Keys.Key_Reset);
+            _lock.PressKey(Lock.Keys.Key_Reset);
             IsEqual(_lock.CurrentState, "Locked");
 
             // Unlock it again.
-            _lock.PressKey(CombinationLock.Keys.Key_0);
-            _lock.PressKey(CombinationLock.Keys.Key_0);
-            _lock.PressKey(CombinationLock.Keys.Key_0);
+            _lock.PressKey(Lock.Keys.Key_0);
+            _lock.PressKey(Lock.Keys.Key_0);
+            _lock.PressKey(Lock.Keys.Key_0);
             IsEqual(_lock.CurrentState, "Unlocked");
 
             // Must be in the unlocked state to change the combination.
             // Press set, new combo, set, set the combination to 123.
-            _lock.PressKey(CombinationLock.Keys.Key_Set);
+            _lock.PressKey(Lock.Keys.Key_Set);
             IsEqual(_lock.CurrentState, "SettingCombo");
 
-            _lock.PressKey(CombinationLock.Keys.Key_1);
-            _lock.PressKey(CombinationLock.Keys.Key_2);
-            _lock.PressKey(CombinationLock.Keys.Key_3);
+            _lock.PressKey(Lock.Keys.Key_1);
+            _lock.PressKey(Lock.Keys.Key_2);
+            _lock.PressKey(Lock.Keys.Key_3);
             IsEqual(_lock.CurrentState, "SettingCombo");
 
-            _lock.PressKey(CombinationLock.Keys.Key_Set);
+            _lock.PressKey(Lock.Keys.Key_Set);
             IsEqual(_lock.CurrentState, "Unlocked");
 
             // Default state test.
-            _lock.PressKey(CombinationLock.Keys.Key_Reset);
+            _lock.PressKey(Lock.Keys.Key_Reset);
             IsEqual(_lock.CurrentState, "Locked");
-            _lock.PressKey(CombinationLock.Keys.Key_Power);
+            _lock.PressKey(Lock.Keys.Key_Power);
             IsEqual(_lock.CurrentState, "Locked");
 
             _lock.InjectBadEvent();
