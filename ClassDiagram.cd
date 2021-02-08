@@ -1,0 +1,73 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<ClassDiagram MajorVersion="1" MinorVersion="1">
+  <Class Name="NStateMachine.State">
+    <Position X="7" Y="2.25" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AACAIAAAAAAAAAAEAAAgAAAAAAAEQAAAIAACCAEgAAA=</HashCode>
+      <FileName>State.cs</FileName>
+    </TypeIdentifier>
+    <ShowAsAssociation>
+      <Field Name="_defaultTransition" />
+    </ShowAsAssociation>
+  </Class>
+  <Class Name="NStateMachine.Transition">
+    <Position X="9.75" Y="3.25" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAIAAAAQEAAAAAAAACIAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>Transition.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="NStateMachine.Lock">
+    <Position X="0.5" Y="2.5" Width="1.75" />
+    <NestedTypes>
+      <Enum Name="NStateMachine.Lock.Keys" Collapsed="true">
+        <TypeIdentifier>
+          <NewMemberFileName>Lock.cs</NewMemberFileName>
+        </TypeIdentifier>
+      </Enum>
+    </NestedTypes>
+    <TypeIdentifier>
+      <HashCode>BAAACAgQAIAAAMAAACAAEAAAAAAAAiAABgACEAAAUQI=</HashCode>
+      <FileName>Lock.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="NStateMachine.DemoApp">
+    <Position X="0.5" Y="0.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAgAQAAAAAAAAAAAABAAAAAAAAAAAI=</HashCode>
+      <FileName>DemoApp.cs</FileName>
+    </TypeIdentifier>
+    <ShowAsAssociation>
+      <Field Name="_lock" />
+    </ShowAsAssociation>
+  </Class>
+  <Class Name="NStateMachine.SmEngine">
+    <Position X="3.5" Y="0.75" Width="1.75" />
+    <TypeIdentifier>
+      <HashCode>AEAAIAAAAAAAAAAYIAQAACAAAUgECEQAAMAAAAAAoBA=</HashCode>
+      <FileName>SmEngine.cs</FileName>
+    </TypeIdentifier>
+    <ShowAsAssociation>
+      <Field Name="_currentState" />
+      <Field Name="_defaultState" />
+    </ShowAsAssociation>
+    <ShowAsCollectionAssociation>
+      <Field Name="_stateMap" />
+    </ShowAsCollectionAssociation>
+  </Class>
+  <Class Name="NStateMachine.Transitions">
+    <Position X="9.5" Y="1" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>Transition.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="NStateMachine.States">
+    <Position X="7" Y="0.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>State.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Font Name="Segoe UI" Size="9" />
+</ClassDiagram>
