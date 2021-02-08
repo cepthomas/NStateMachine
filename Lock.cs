@@ -73,9 +73,9 @@ namespace NStateMachine
 
         /// <summary>Current state of the lock.</summary>
         bool _isLocked = true;
-        #endregion
 
         const string LOCK_LOG_CAT = "ENGRT";
+        #endregion
 
         #region Public API - called from main application loop
         /// <summary>Initialize the map.</summary>
