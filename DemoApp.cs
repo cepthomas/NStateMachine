@@ -7,7 +7,11 @@ using System.Runtime.CompilerServices;
 
 namespace NStateMachine
 {
-    public class LockTest
+    /// <summary>
+    /// Shows how to implement a state machine in an application.
+    /// Also does unit testing.
+    /// </summary>
+    public class DemoApp
     {
         Lock _lock = null;
 
@@ -15,8 +19,13 @@ namespace NStateMachine
         {
             // Create a new combo lock.
             _lock = new();
-            _lock.TraceLevel = TraceLevel.ALL;
-            IsEqual(_lock.Init(), 1); // There is one syntax error.
+            _lock.LogEvent += Lock_LogEvent;
+
+            var errors = _lock.Init();
+            IsEqual(errors.Count, 1); // There is one syntax error.
+            errors.ForEach(e => Lock_LogEvent(this, new LogInfo("APPSM", DateTime.Now, e)));
+
+            _lock.Run();
 
             // Should come up in the locked state.
             IsEqual(_lock.CurrentState, "Locked");
@@ -64,11 +73,11 @@ namespace NStateMachine
             IsEqual(_lock.CurrentState, "Locked");
 
             _lock.InjectBadEvent();
-            IsEqual(_lock.CurrentState, "DEF_STATE");
+            IsEqual(_lock.CurrentState, SmEngine.DEF_STATE);
             // The state machine is now dead and will no longer process events.
 
             // Make a picture.
-            string sdot = _lock.GenerateDot();
+            string sdot = _lock.GenerateDot("Lock Logic");
             File.WriteAllText("testout.gv", sdot);
             using Process p = new();
             p.StartInfo.FileName = "dot";
@@ -76,13 +85,19 @@ namespace NStateMachine
             bool ok = p.Start();
         }
 
-        /// <summary>Checker.</summary>
+        void Lock_LogEvent(object sender, LogInfo e)
+        {
+            string s = $"{e.TimeStamp:yyyy'-'MM'-'dd HH':'mm':'ss.fff} {e.LogType} {e.Msg}";
+            Debug.WriteLine(s);
+            Console.WriteLine(s);
+        }
+
         void IsEqual<T>(T value1, T value2, [CallerFilePath] string file = "???", [CallerLineNumber] int line = -1) where T : IComparable
         {
             if (value1.CompareTo(value2) != 0)
             {
                 string s = $"FAIL [{value1}] should be [{value2}] : {file}({line})";
-                _lock.Trace(TraceLevel.TESTF, s);
+                Lock_LogEvent(this, new LogInfo("TESTF", DateTime.Now, s));
                 Console.WriteLine(s);
             }
         }

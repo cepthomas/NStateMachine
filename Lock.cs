@@ -8,9 +8,10 @@ namespace NStateMachine
     public class Lock : SmEngine
     {
         /// <summary>Specify the state machine functionality.</summary>
-        int CreateMap()
+        /// <returns>List of syntax errors.</returns>
+        void CreateMap()
         {
-            States states = new()
+            _states = new()
             {
                 { "Initial", InitialEnter, InitialExit, new()
                     {
@@ -52,8 +53,6 @@ namespace NStateMachine
                     }
                 },
             };
-
-            return InitSm(states, "Initial");
         }
 
         #region Context data for application
@@ -76,19 +75,31 @@ namespace NStateMachine
         bool _isLocked = true;
         #endregion
 
+        const string LOCK_LOG_CAT = "ENGRT";
+
         #region Public API - called from main application loop
         /// <summary>Initialize the map.</summary>
-        /// <returns>Number of syntax errors.</returns>
-        public int Init()
+        /// <returns>List of syntax errors.</returns>
+        public List<string> Init()
         {
-            return CreateMap();
+            CreateMap();
+            var errors = InitSm("Initial");
+            return errors;
+        }
+
+        /// <summary>
+        /// Start the sm.
+        /// </summary>
+        public void Run()
+        {
+            StartSm();
         }
 
         /// <summary>Input from the keypad</summary>
         /// <param name="key">Key pressed on the keypad</param>
         public void PressKey(Keys key)
         {
-            Trace(TraceLevel.APPRT, $"KeyPressed:{key}");
+            Log(LOCK_LOG_CAT, $"KeyPressed:{key}");
 
             _ = key switch
             {
@@ -110,20 +121,20 @@ namespace NStateMachine
         /// <summary>Initialize the lock</summary>
         void InitialEnter(object o)
         {
-            Trace(TraceLevel.APPRT, $"InitialEnter:{o}");
+            Log(LOCK_LOG_CAT, $"InitialEnter:{o}");
             ProcessEvent(_isLocked ? "IsLocked" : "IsUnlocked");
         }
 
         /// <summary>Dummy function</summary>
         void InitialExit(object o)
         {
-            Trace(TraceLevel.APPRT, $"InitialExit:{o}");
+            Log(LOCK_LOG_CAT, $"InitialExit:{o}");
         }
 
         /// <summary>Locked transition function.</summary>
         void LockedEnter(object o)
         {
-            Trace(TraceLevel.APPRT, $"LockedEnter:{o}");
+            Log(LOCK_LOG_CAT, $"LockedEnter:{o}");
             _isLocked = true;
             _currentEntry.Clear();
         }
@@ -131,14 +142,14 @@ namespace NStateMachine
         /// <summary>Clear the lock</summary>
         void ClearCurrentEntry(object o)
         {
-            Trace(TraceLevel.APPRT, $"ClearCurrentEntry:{o}");
+            Log(LOCK_LOG_CAT, $"ClearCurrentEntry:{o}");
             _currentEntry.Clear();
         }
 
         /// <summary>Add a digit to the current sequence.</summary>
         void LockedAddDigit(object o)
         {
-            Trace(TraceLevel.APPRT, $"LockedAddDigit:{o}");
+            Log(LOCK_LOG_CAT, $"LockedAddDigit:{o}");
             Keys key = (Keys)o;
 
             _currentEntry.Add(key);
@@ -159,7 +170,7 @@ namespace NStateMachine
         /// <summary>Add a digit to the current sequence.</summary>
         void SetComboAddDigit(object o)
         {
-            Trace(TraceLevel.APPRT, $"SetComboAddDigit:{o}");
+            Log(LOCK_LOG_CAT, $"SetComboAddDigit:{o}");
             Keys key = (Keys)o;
             _currentEntry.Add(key);
         }
@@ -167,7 +178,7 @@ namespace NStateMachine
         /// <summary>Try setting a new combination.</summary>
         void SetCombo(object o)
         {
-            Trace(TraceLevel.APPRT, $"SetCombo:{o}");
+            Log(LOCK_LOG_CAT, $"SetCombo:{o}");
             if (_currentEntry.Count > 0)
             {
                 _combination.Clear();
@@ -179,14 +190,14 @@ namespace NStateMachine
         /// <summary>Lock is unlocked now.</summary>
         void UnlockedEnter(object o)
         {
-            Trace(TraceLevel.APPRT, $"UnlockedEnter:{o}");
+            Log(LOCK_LOG_CAT, $"UnlockedEnter:{o}");
             _isLocked = false;
         }
 
         /// <summary>Clear the lock.</summary>
         void ResetAll(object o)
         {
-            Trace(TraceLevel.APPRT, $"ClearCurrentEntry:{o}");
+            Log(LOCK_LOG_CAT, $"ClearCurrentEntry:{o}");
             _isLocked = true;
             _currentEntry.Clear();
         }
@@ -194,14 +205,14 @@ namespace NStateMachine
         /// <summary>Cause an exception to be thrown.</summary>
         void ForceFail(object o)
         {
-            Trace(TraceLevel.APPRT, "ForceFail");
+            Log(LOCK_LOG_CAT, "ForceFail");
             throw new Exception("ForceFail");
         }
 
         /// <summary>Runtime bad event. Do something app-specific.</summary>
         void UnexpectedEvent(object o)
         {
-            Trace(TraceLevel.APPRT, "UnexpectedEvent");
+            Log(LOCK_LOG_CAT, "UnexpectedEvent");
             //throw new Exception("UnexpectedEvent");
         }
         #endregion

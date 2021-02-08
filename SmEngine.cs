@@ -9,12 +9,12 @@ namespace NStateMachine
     /// <param name="o">Optional data.</param>
     public delegate void SmFunc(object o);
 
-    /// <summary>Logging.</summary>
-    [Flags]
-    public enum TraceLevel { NONE = 0x00, APPSM = 0x01, APPRT = 0x02, ENGRT = 0x04, TESTF = 0x08, OTHER = 0x10, ALL = 0xFFFF }
-
     /// <summary>Data carrying class.</summary>
     public record EventInfo(string Name, object Param);
+
+    /// <summary>For tracing.</summary>
+    public record LogInfo(string LogType, DateTime TimeStamp, string Msg);
+
 
     /// <summary>Agnostic core engine of the state machine.</summary>
     public class SmEngine
@@ -26,9 +26,16 @@ namespace NStateMachine
         public const string DEF_EVENT = "DEF_EVENT";
         #endregion
 
+        #region Logging
+        /// <summary>Log me please.</summary>
+        public event EventHandler<LogInfo> LogEvent;
+
+        const string SM_LOG_CAT = "ENGRT";
+        #endregion
+
         #region Fields
         /// <summary?The original.</summary>
-        States _states = null;
+        protected States _states = null;
 
         /// <summary>All the states.</summary>
         readonly Dictionary<string, State> _stateMap = new();
@@ -47,36 +54,19 @@ namespace NStateMachine
 
         /// <summary>Flag to handle recursion in event processing.</summary>
         bool _processingEvents = false;
-
-        /// <summary>State machine syntax errors.</summary>
-        int _smErrors = 0;
         #endregion
 
         #region Properties
         /// <summary>Readable version of current state.</summary>
-        public string CurrentState => _currentState == null ? "" : _currentState.StateName;
-
-        /// <summary>For diagnostics.</summary>
-        public TraceLevel TraceLevel { get; set; } = TraceLevel.NONE;
+        public string CurrentState => _currentState is null ? "" : _currentState.StateName;
         #endregion
 
         #region Public functions
-        /// <summary>Adjust to taste. Public so clients can inject traces.</summary>
-        /// <param name="lvl">Filter</param>
-        /// <param name="s">What to add.</param>
-        public void Trace(TraceLevel lvl, string s)
-        {
-            if ((TraceLevel & lvl) > 0)
-            {
-                Debug.WriteLine($"{DateTime.Now:yyyy'-'MM'-'dd HH':'mm':'ss.fff} {lvl} {s}");
-            }
-        }
-
         /// <summary>
-        /// Generate DOT markup.
+        /// Generate DOT markup and create a picture.
         /// </summary>
         /// <returns>Returns a string that contains the DOT markup.</returns>
-        public string GenerateDot()
+        public string GenerateDot(string label)
         {
             List<string> ls = new()
             {
@@ -84,7 +74,8 @@ namespace NStateMachine
                 "digraph StateDiagram {",
                 "    ratio=\"compress\";",
                 "    fontname=\"Arial\";",
-                "    label=\"\";", // (your label here!)
+                "    label=\"" + label + "\";",
+                "",
                 "    node [",
                 "    height=\"1\";",
                 "    width=\"2\";",
@@ -101,20 +92,27 @@ namespace NStateMachine
                 ""
             };
 
-            // Generate actual nodes and edges from states. Use original spec for this, not our adjusted runtime version.
-            foreach (State st in _states)
+            if (_states is null || _states.Count == 0)
             {
-                // Iterate through the state transitions.
-                foreach (Transition t in st.Transitions)
+                ls.Add($"Bad Machine");
+            }
+            else
+            {
+                // Generate actual nodes and edges from states. Use original spec for this, not our adjusted runtime version.
+                foreach (State st in _states)
                 {
-                    // Get func name if pertinent.
-                    var sf = t.GetType().GetProperty("TransitionFunc");
-                    var fn = sf.GetValue(t, null);
-                    string funcname = fn is not null ? $"\n{(fn as SmFunc).Method.Name}()" : "";
-                    string eventName = $"{t.EventName}{funcname}";
+                    // Iterate through the state transitions.
+                    foreach (Transition t in st.Transitions)
+                    {
+                        // Get func name if pertinent.
+                        var sf = t.GetType().GetProperty("TransitionFunc");
+                        var fn = sf.GetValue(t, null);
+                        string funcname = fn is not null ? $":{(fn as SmFunc).Method.Name}()" : "";
+                        string eventName = $"{t.EventName}{funcname}";
 
-                    // Write an edge for the transition
-                    ls.Add($"        \"{st.StateName}\" -> \"{t.NextState}\" [label=\"{eventName}\"];");
+                        // Write an edge for the transition
+                        ls.Add($"    \"{st.StateName}\" -> \"{t.NextState}\" [label=\"{eventName}\"];");
+                    }
                 }
             }
 
@@ -128,21 +126,19 @@ namespace NStateMachine
         /// <summary>
         /// Init and validate the definitions.
         /// </summary>
-        /// <param name="states">All the states.</param>
         /// <param name="initialState">Initial state.</param>
-        /// <returns>Number of syntax errors.</returns>
-        protected int InitSm(States states, string initialState)
+        /// <returns>List of syntax errors.</returns>
+        protected List<string> InitSm(string initialState)
         {
-            _states = states;
-            _smErrors = 0;
             _stateMap.Clear();
             _eventQueue.Clear();
+            List<string> errors = new();
 
             // Populate our collection from the client.
-            foreach (State st in states)
+            foreach (State st in _states)
             {
                 // Check for default state.
-                if (st.StateName == DEF_STATE)
+                if (st.StateName is DEF_STATE)
                 {
                     if (_defaultState == null)
                     {
@@ -150,7 +146,7 @@ namespace NStateMachine
                     }
                     else
                     {
-                        SmError($"Multiple Default States");
+                        errors.Add($"Multiple Default States");
                     }
                 }
                 else
@@ -162,12 +158,12 @@ namespace NStateMachine
                     }
                     else
                     {
-                        SmError($"Duplicate StateName[{st.StateName}]");
+                        errors.Add($"Duplicate StateName[{st.StateName}]");
                     }
                 }
             }
 
-            if (_defaultState != null)
+            if (_defaultState is not null)
             {
                 _stateMap.Add(DEF_STATE, _defaultState);
             }
@@ -178,30 +174,27 @@ namespace NStateMachine
             // Errors in state inits?
             foreach (State st in _stateMap.Values)
             {
-                st.Init(keyList).ForEach(e => SmError(e));
+                errors.AddRange(st.Init(keyList));
             }
 
             if (initialState != DEF_STATE && _stateMap.ContainsKey(initialState))
             {
                 _currentState = _stateMap[initialState];
-                _currentState.Enter(null);
             }
             else // invalid initial state
             {
-                SmError($"Invalid Initial State[{initialState}]");
+                errors.Add($"Invalid Initial State[{initialState}]");
             }
 
-            return _smErrors;
+            return errors;
         }
 
         /// <summary>
-        /// Handler for syntax errors.
+        /// Machine is good so start it up.
         /// </summary>
-        /// <param name="s"></param>
-        void SmError(string s)
+        protected void StartSm()
         {
-            Trace(TraceLevel.APPSM, s);
-            _smErrors++;
+            _currentState.Enter(null);
         }
 
         /// <summary>
@@ -217,7 +210,7 @@ namespace NStateMachine
 
             lock (_locker)
             {
-                Trace(TraceLevel.ENGRT, $"ProcessEvent:{evt}:{o}");
+                Log(SM_LOG_CAT, $"ProcessEvent:{evt}:{o}");
 
                 // Add the event to the queue.
                 _eventQueue.Enqueue(new EventInfo(evt, o));
@@ -259,6 +252,14 @@ namespace NStateMachine
 
                 return ok;
             }
+        }
+
+        /// <summary>Trace/logging function.</summary>
+        /// <param name="cat">Printable category.</param>
+        /// <param name="msg">What to add.</param>
+        protected void Log(string cat, string msg)
+        {
+            LogEvent?.Invoke(this, new LogInfo(cat, DateTime.Now, msg));
         }
         #endregion
     }

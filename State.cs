@@ -4,7 +4,13 @@ using System.Collections.Generic;
 
 namespace NStateMachine
 {
-    /// <summary>Describes an individual state. See README.md.</summary>
+    /// <summary>
+    /// Describes an individual state.
+    ///  - Each state must have a name, except the(optional) default state identified by DEF_STATE.
+    ///  - The current state is checked first, then the default state.
+    ///  - Each state must have one or more Transitions.
+    ///  - Each state may have an optional enter and/or exit action executed on state changes.Otherwise use NO_FUNC.
+    /// </summary>
     public class State
     {
         #region Properties
@@ -38,7 +44,10 @@ namespace NStateMachine
             List<string> errors = new();
 
             // Basic sanity check.
-            if (Transitions.Count == 0) { errors.Add($"No transitions for State[{StateName}]"); }
+            if (Transitions.Count == 0)
+            {
+                errors.Add($"No transitions for State[{StateName}]"); 
+            }
 
             // Adjust transitions for DEF_STATE and SAME_STATE values.
             // Copy the transitions temporarily, ignoring the event names for now.
@@ -81,7 +90,7 @@ namespace NStateMachine
                 // Is the nextState valid?
                 if (!stateNames.Contains(t.NextState))
                 {
-                    errors.Add($"Undefined NextState[{t.NextState}] for Event[{ t.EventName}] for State[{StateName}");
+                    errors.Add($"Undefined NextState[{t.NextState}] for Event[{ t.EventName}] for State[{StateName}]");
                 }
             }
 
