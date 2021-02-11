@@ -48,7 +48,7 @@ namespace NStateMachine
                     DEF_STATE, NO_FUNC, NO_FUNC, new()
                     {
                         { "Shutdown",       "Locked",       ResetAll },
-                        { "Bar",            "Foo",          NO_FUNC },
+                        { "Bar",            "InvalidState", NO_FUNC },
                         { DEF_EVENT,        SAME_STATE,     UnexpectedEvent }
                     }
                 },

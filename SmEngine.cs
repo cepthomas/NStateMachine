@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Reflection;
+using System.Text;
 
 namespace NStateMachine
 {
@@ -75,45 +76,80 @@ namespace NStateMachine
                 "    ratio=\"compress\";",
                 "    fontname=\"Arial\";",
                 "    label=\"" + label + "\";",
-                "",
-                "    node [",
-                "    height=\"1\";",
-                "    width=\"2\";",
-                "    shape=\"ellipse\";",
-                "    fixedsize=\"true\";",
-                "    fontsize=\"10\";",
-                "    fontname=\"Arial\";",
-                "    ];",
-                "",
-                "    edge [",
-                "    fontsize=\"10\";",
-                "    fontname=\"Arial\";",
-                "    ];",
+                "    node [height=\"1\", width=\"1.5\", shape=\"ellipse\", fixedsize=\"true\", fontsize=\"10\", fontname=\"Arial\"];",
+                "    edge [fontsize=\"10\", fontname=\"Arial\"];",
                 ""
             };
 
+            List<string> errors = new();
+
             if (_states is null || _states.Count == 0)
             {
-                ls.Add($"Bad Machine");
+                errors.Add($"State definitions bad.");
             }
             else
             {
                 // Generate actual nodes and edges from states. Use original spec for this, not our adjusted runtime version.
+                Dictionary<string, string> nodeIds = new();
+
+                // Collect the state node info. Presumably duplicates and invalids have already been detected by InitSm().
+                foreach (State st in _states)
+                {
+                    string nid = $"N{nodeIds.Count}";
+                    nodeIds.Add(st.StateName, nid);
+
+                    string enFunc = GetFuncName(st, "EntryFunc");
+                    if(enFunc != "")
+                    {
+                        enFunc = $"{enFunc}()\\n";
+                    }
+                    string exFunc = GetFuncName(st, "ExitFunc");
+                    if (exFunc != "")
+                    {
+                        exFunc = $"\\n{exFunc}()";
+                    }
+
+                    string stDesc = $"    {nid} [label=\"{enFunc}{st.StateName}{exFunc}\"]";
+                    ls.Add(stDesc);
+                }
+
+                ls.Add(""); // space, man.
+
+                // Now connect them up.
                 foreach (State st in _states)
                 {
                     // Iterate through the state transitions.
                     foreach (Transition t in st.Transitions)
                     {
                         // Get func name if pertinent.
-                        var sf = t.GetType().GetProperty("TransitionFunc");
-                        var fn = sf.GetValue(t, null);
-                        string funcname = fn is not null ? $":{(fn as SmFunc).Method.Name}()" : "";
-                        string eventName = $"{t.EventName}{funcname}";
+                        string tFunc = GetFuncName(t, "TransitionFunc");
 
-                        // Write an edge for the transition
-                        ls.Add($"    \"{st.StateName}\" -> \"{t.NextState}\" [label=\"{eventName}\"];");
+                        if (tFunc != "")
+                        {
+                            tFunc = $"\\n{tFunc}()";
+                        }
+
+                        string eventName = $"{t.EventName}{tFunc}";
+
+                        // Write an edge for the transition.
+                        try
+                        {
+                            ls.Add($"    {nodeIds[st.StateName]} -> {nodeIds[t.NextState]} [label=\"{eventName}\"];");
+                        }
+                        catch (Exception e) // This should never happen but just in case.
+                        {
+                            errors.Add(e.Message);
+                        }
                     }
                 }
+            }
+
+            if (errors.Count > 0)
+            {
+                ls.Add("");
+                ls.Add($"    NERR [shape=\"rect\", color=\"red\", fixedsize=\"false\", label=\"Bad Machine!");
+                errors.ForEach(e => ls.Add($" {e}"));
+                ls.Add($"\"]");
             }
 
             ls.Add("}");
@@ -252,6 +288,20 @@ namespace NStateMachine
 
                 return ok;
             }
+        }
+
+        /// <summary>
+        /// Get the instance name of a SmFunc property.
+        /// </summary>
+        /// <param name="o">The instance object.</param>
+        /// <param name="prop">Which property.</param>
+        /// <returns>The name or empty if not available.</returns>
+        string GetFuncName(object o, string prop)
+        {
+            var sf = o.GetType().GetProperty(prop);
+            var fn = sf.GetValue(o, null);
+            string funcname = fn is not null ? $":{(fn as SmFunc).Method.Name}" : "";
+            return funcname;
         }
 
         /// <summary>Trace/logging function.</summary>

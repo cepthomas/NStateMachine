@@ -6,7 +6,8 @@
 
 
 # Usage
-See Lock.cs and DemoApp.cs for an example of how to use this.
+- Not currently built as a library. To use in your own project, simply copy SmEngine.cs, State.cs, Transition.cs.
+- See Lock.cs and DemoApp.cs for an example of how to use this.
 
 The main idea is to shape the machine in a visually uncluttered fashion. Each state would be described like this:
 ```
@@ -21,7 +22,6 @@ The main idea is to shape the machine in a visually uncluttered fashion. Each st
 ```
 
 Here's part of Lock.cs:
-
 ```
 _states = new()
 {
@@ -51,6 +51,7 @@ You can generate a nice picture using graphviz if you have it installed (why wou
 ![SM](Lock.png)
 
 # Structure
-More talk...
+
+Class diagram, including the demo stuff.
 
 ![Structure](ClassDiagram.png)
