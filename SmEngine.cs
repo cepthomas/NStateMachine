@@ -35,7 +35,7 @@ namespace NStateMachine
         #endregion
 
         #region Fields
-        /// <summary?The original.</summary>
+        /// <summary>The original.</summary>
         protected States _states = null;
 
         /// <summary>All the states.</summary>
