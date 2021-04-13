@@ -1,4 +1,4 @@
 ﻿using System;
 
 // New: Top-level statement.
-new NStateMachine.DemoApp().Run();
+new NStateMachine.Demo.DemoApp().Run();
