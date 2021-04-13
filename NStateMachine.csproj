@@ -5,12 +5,4 @@
     <TargetFramework>net5.0</TargetFramework>
   </PropertyGroup>
 
-  <ItemGroup>
-    <None Remove="godot.cmd" />
-    <None Remove="new.txt" />
-    <None Remove="nsm.sbot-project" />
-    <None Remove="nsm.sublime-project" />
-    <None Remove="nsm.sublime-workspace" />
-  </ItemGroup>
-
 </Project>
