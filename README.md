@@ -49,7 +49,7 @@ Each state is described like this:
 ## Diagram
 You can generate a nice picture using graphviz if you have it installed (why would you not?).
 
-![SM](Demo\Lock.png)
+![SM](Demo/Lock.png)
 
 ## Classes
 ![Class diagram](ClassDiagram.png)
