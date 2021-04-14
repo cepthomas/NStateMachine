@@ -5,8 +5,15 @@ using NStateMachine;
 
 namespace NStateMachine
 {
+    /// <summary>My states.</summary>
+    public enum S { Default = 0, Initial, Locked, Unlocked, SettingCombo, Failed };
+
+    /// <summary>My events.</summary>
+    public enum E { Default = 0, DigitKeyPressed, ForceFail, IsLocked, IsUnlocked, Reset, SetCombo, Shutdown, ValidCombo };
+
+
     /// <summary>An example state machine implementing a standard combination lock.</summary>
-    public class Lock : SmEngine
+    public class Lock : SmEngine<S, E>
     {
         /// <summary>Specify the state machine functionality.</summary>
         /// <returns>List of syntax errors.</returns>
@@ -14,43 +21,43 @@ namespace NStateMachine
         {
             _states = new()
             {
-                { "Initial", InitialEnter, InitialExit, new()
+                { 
+                    S.Initial, InitialEnter, InitialExit, new()
                     {
-                        { "IsLocked",       "Locked",       NO_FUNC },
-                        { "IsUnlocked",     "Unlocked",     NO_FUNC }
+                        { E.IsLocked,           S.Locked,           null },
+                        { E.IsUnlocked,         S.Unlocked,         null }
                     }
                 },
                 {
-                    "Locked", LockedEnter, NO_FUNC, new()
+                    S.Locked, LockedEnter, null, new()
                     {
-                       { "ForceFail",       SAME_STATE,     ForceFail },
-                       { "DigitKeyPressed", SAME_STATE,     LockedAddDigit },
-                       { "Reset",           SAME_STATE,     ClearCurrentEntry },
-                       { "ValidCombo",      "Unlocked",     NO_FUNC },
+                       { E.ForceFail,           S.Locked,           ForceFail },
+                       { E.DigitKeyPressed,     S.Locked,           LockedAddDigit },
+                       { E.Reset,               S.Locked,           ClearCurrentEntry },
+                       { E.ValidCombo,          S.Unlocked,         null },
                     }
                 },
                 {
-                    "Unlocked", UnlockedEnter, NO_FUNC, new()
+                    S.Unlocked, UnlockedEnter, null, new()
                     {
-                       { "Reset",           "Locked",       ClearCurrentEntry },
-                       { "SetCombo",        "SettingCombo", ClearCurrentEntry },
-                       { DEF_EVENT,         SAME_STATE,     ClearCurrentEntry } // ignore other events
+                       { E.Reset,               S.Locked,           ClearCurrentEntry },
+                       { E.SetCombo,            S.SettingCombo,     ClearCurrentEntry },
+                       { E.Default,             S.Unlocked,         ClearCurrentEntry } // ignores other events
                     }
                 },
                 {
-                    "SettingCombo", ClearCurrentEntry, NO_FUNC, new()
+                    S.SettingCombo, ClearCurrentEntry, null, new()
                     {
-                        { "DigitKeyPressed", SAME_STATE,    SetComboAddDigit },
-                        { "SetCombo",       "Unlocked",     SetCombo },
-                        { "Reset",          "Unlocked",     ClearCurrentEntry },
+                        { E.DigitKeyPressed,    S.SettingCombo,     SetComboAddDigit },
+                        { E.SetCombo,           S.Unlocked,         SetCombo },
+                        { E.Reset,              S.Unlocked,         ClearCurrentEntry },
                     }
                 },
                 {
-                    DEF_STATE, NO_FUNC, NO_FUNC, new()
+                    S.Default, null, null, new()
                     {
-                        { "Shutdown",       "Locked",       ResetAll },
-                        { "Bar",            "InvalidState", NO_FUNC },
-                        { DEF_EVENT,        SAME_STATE,     UnexpectedEvent }
+                        { E.Shutdown,           S.Locked,           ResetAll },
+                        { E.Default,            S.Default,          UnexpectedEvent }
                     }
                 },
             };
@@ -75,7 +82,7 @@ namespace NStateMachine
         /// <summary>Current state of the lock.</summary>
         bool _isLocked = true;
 
-        const string LOCK_LOG_CAT = "ENGRT";
+        const string LOCK_LOG_CAT = "LOCK";
         #endregion
 
         #region Public API - called from main application loop
@@ -84,7 +91,7 @@ namespace NStateMachine
         public List<string> Init()
         {
             CreateMap();
-            var errors = InitSm("Initial");
+            var errors = InitSm(S.Initial);
             return errors;
         }
 
@@ -104,17 +111,11 @@ namespace NStateMachine
 
             _ = key switch
             {
-                Keys.Key_Reset  => ProcessEvent("Reset", key),
-                Keys.Key_Set    => ProcessEvent("SetCombo", key),
-                Keys.Key_Power  => ProcessEvent("Shutdown", key),
-                _               => ProcessEvent("DigitKeyPressed", key)
+                Keys.Key_Reset  => ProcessEvent(E.Reset, key),
+                Keys.Key_Set    => ProcessEvent(E.SetCombo, key),
+                Keys.Key_Power  => ProcessEvent(E.Shutdown, key),
+                _               => ProcessEvent(E.DigitKeyPressed, key)
             };
-        }
-
-        /// <summary>Only for testing.</summary>
-        public void InjectBadEvent()
-        {
-            ProcessEvent("BAD_EVENT", false);
         }
         #endregion
 
@@ -123,7 +124,7 @@ namespace NStateMachine
         void InitialEnter(object o)
         {
             Log(LOCK_LOG_CAT, $"InitialEnter:{o}");
-            ProcessEvent(_isLocked ? "IsLocked" : "IsUnlocked");
+            ProcessEvent(_isLocked ? E.IsLocked : E.IsUnlocked);
         }
 
         /// <summary>Dummy function</summary>
@@ -164,7 +165,7 @@ namespace NStateMachine
 
             if(valid)
             {
-                ProcessEvent("ValidCombo");
+                ProcessEvent(E.ValidCombo);
             }
         }
 

@@ -11,11 +11,11 @@ namespace NStateMachine
     ///  - Each state must have one or more Transitions.
     ///  - Each state may have an optional enter and/or exit action executed on state changes.Otherwise use NO_FUNC.
     /// </summary>
-    public class State
+    public class State<S, E> where S: Enum where E : Enum
     {
         #region Properties
         /// <summary>The state name.</summary>
-        public string StateName { get; internal set; } = "???";
+        public S StateId { get; internal set; } = default;
 
         /// <summary>Optional state entry action.</summary>
         public SmFunc EntryFunc { get; init; } = null;
@@ -24,40 +24,40 @@ namespace NStateMachine
         public SmFunc ExitFunc { get; init; } = null;
 
         /// <summary>All the transitions possible for this state. Only used for initialization.</summary>
-        public Transitions Transitions { get; init; } = null;
+        public Transitions<S, E> Transitions { get; init; } = null;
 
-        /// <summary>Massaged runtime version of Transitions. Key is event name.</summary>
-        public Dictionary<string, Transition> TransitionMap { get; init; } = new();
+        /// <summary>Massaged runtime version of Transitions. Key is event.</summary>
+        public Dictionary<E, Transition<S, E>> TransitionMap { get; init; } = new();
         #endregion
 
         #region Fields
         /// <summary>Convenience reference to optional default transition.</summary>
-        private Transition _defaultTransition = null;
+        private Transition<S, E> _defaultTransition = null; //TODO keep or fold in with map?
         #endregion
 
         #region Public functions
         /// <summary>Initialize the state and its transitions.</summary>
-        /// <param name="stateNames">All valid state names</param>
+//        /// <param name="states">All valid states</param>
         /// <returns>List of any errors.</returns>
-        public List<string> Init(List<string> stateNames)
+        public List<string> Init()//List<S> states)
         {
             List<string> errors = new();
 
             // Basic sanity check.
             if (Transitions.Count == 0)
             {
-                errors.Add($"No transitions for State[{StateName}]"); 
+                errors.Add($"No transitions for State[{StateId}]"); 
             }
 
             // Adjust transitions for DEF_STATE and SAME_STATE values.
             // Copy the transitions temporarily, ignoring the event names for now.
-            Dictionary<string, Transition> tempTrans = new();
+            Dictionary<string, Transition<S, E>> tempTrans = new();
             Transitions.ForEach(t => { tempTrans.Add(tempTrans.Count.ToString(), t); });
 
-            foreach (Transition t in tempTrans.Values)
+            foreach (Transition<S, E> t in tempTrans.Values)
             {
                 // Handle default condition.
-                if (t.EventName == SmEngine.DEF_EVENT)
+                if ((int)(object)t.EventId == 0)
                 {
                     if (_defaultTransition is null)
                     {
@@ -65,65 +65,72 @@ namespace NStateMachine
                     }
                     else
                     {
-                        errors.Add($"Duplicate Default Event for State[{StateName}]");
+                        errors.Add($"Duplicate Default Event for State[{StateId}]");
                     }
                 }
                 else
                 {
                     // Add to final map.
-                    if (!TransitionMap.ContainsKey(t.EventName))
+                    if (!TransitionMap.ContainsKey(t.EventId))
                     {
-                        TransitionMap.Add(t.EventName, t);
+                        TransitionMap.Add(t.EventId, t);
                     }
                     else
                     {
-                        errors.Add($"Duplicate EventName[{t.EventName}] for State[{StateName}]");
+                        errors.Add($"Duplicate EventName[{t.EventId}] for State[{StateId}]");
                     }
                 }
 
-                // Fix any SAME_STATE to current.
-                if (t.NextState == SmEngine.SAME_STATE)
-                {
-                    t.NextState = StateName;
-                }
-
-                // Is the nextState valid?
-                if (!stateNames.Contains(t.NextState))
-                {
-                    errors.Add($"Undefined NextState[{t.NextState}] for Event[{ t.EventName}] for State[{StateName}]");
-                }
+                //// Is the nextState valid? TODO not needed
+                //if (!states.Contains(t.NextState))
+                //{
+                //    errors.Add($"Undefined NextState[{t.NextState}] for Event[{ t.EventId}] for State[{StateId}]");
+                //}
             }
 
             return errors;
         }
 
-        /// <summary>Process the event. Execute transition if found, otherwise return null and let the caller handle it.</summary>
+        /// <summary>Process the event. Execute transition if found, otherwise return indication and let the caller handle it.</summary>
         /// <param name="ei">The event information.</param>
-        /// <returns>The next state name.</returns>
-        public string ProcessEvent(EventInfo ei)
+        /// <returns>A tuple indicating if this was handled and if true the next state.</returns>
+        public (bool handled, S state) ProcessEvent(EventInfo<S, E> ei)
         {
-            // Get the transition associated with the event or default.
-            var tx = TransitionMap.GetValueOrDefault(ei.Name, _defaultTransition);
-            return tx?.Execute(ei);
+            bool handled = false;
+            S state = default;
+
+            // Get the transition associated with the event.
+            if (TransitionMap.ContainsKey(ei.EventId))
+            {
+                state = TransitionMap[ei.EventId].Execute(ei);
+                handled = true;
+            }
+            else if (_defaultTransition != null) // default handler?
+            {
+                state = _defaultTransition.Execute(ei);
+                handled = true;
+            }
+
+            return (handled, state);
         }
 
         /// <summary>Enter the state by executing the enter action</summary>
         /// <param name="o">Optional data object</param>
         public void Enter(object o) => EntryFunc?.Invoke(o);
 
-        /// <summary>Exit the state by executing the enter action</summary>
+        /// <summary>Exit the state by executing the exit action</summary>
         /// <param name="o">Optional data object</param>
         public void Exit(object o) => ExitFunc?.Invoke(o);
 
         /// <summary>Readable version.</summary>
-        public override string ToString() => StateName;
+        public override string ToString() => $"{StateId}";
         #endregion
     }
 
     /// <summary>Specialized container. Has Add() to support cleaner initialization.</summary>
-    public class States : List<State>
+    public class States<S, E> : List<State<S, E>> where S : Enum where E : Enum
     {
-        public void Add(string stn, SmFunc entry, SmFunc exit, Transitions transitions) =>
-           Add(new() { StateName = stn, EntryFunc = entry, ExitFunc = exit, Transitions = transitions });
+        public void Add(S stn, SmFunc entry, SmFunc exit, Transitions<S, E> transitions) =>
+           Add(new() { StateId = stn, EntryFunc = entry, ExitFunc = exit, Transitions = transitions });
     }
 }    

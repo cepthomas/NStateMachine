@@ -29,53 +29,49 @@ namespace NStateMachine.Demo
             _lock.Run();
 
             // Should come up in the locked state.
-            IsEqual(_lock.CurrentState, "Locked");
+            IsEqual(_lock.CurrentState, S.Locked);
 
             // Enter the default combination of 000.
             _lock.PressKey(Lock.Keys.Key_0);
-            IsEqual(_lock.CurrentState, "Locked");
+            IsEqual(_lock.CurrentState, S.Locked);
             _lock.PressKey(Lock.Keys.Key_0);
-            IsEqual(_lock.CurrentState, "Locked");
+            IsEqual(_lock.CurrentState, S.Locked);
             _lock.PressKey(Lock.Keys.Key_0);
             // Should now be unlocked.
-            IsEqual(_lock.CurrentState, "Unlocked");
+            IsEqual(_lock.CurrentState, S.Unlocked);
 
             // Test the default handler. Should stay in the same state.
             _lock.PressKey(Lock.Keys.Key_5);
-            IsEqual(_lock.CurrentState, "Unlocked");
+            IsEqual(_lock.CurrentState, S.Unlocked);
 
             // Lock it again.
             _lock.PressKey(Lock.Keys.Key_Reset);
-            IsEqual(_lock.CurrentState, "Locked");
+            IsEqual(_lock.CurrentState, S.Locked);
 
             // Unlock it again.
             _lock.PressKey(Lock.Keys.Key_0);
             _lock.PressKey(Lock.Keys.Key_0);
             _lock.PressKey(Lock.Keys.Key_0);
-            IsEqual(_lock.CurrentState, "Unlocked");
+            IsEqual(_lock.CurrentState, S.Unlocked);
 
             // Must be in the unlocked state to change the combination.
             // Press set, new combo, set, set the combination to 123.
             _lock.PressKey(Lock.Keys.Key_Set);
-            IsEqual(_lock.CurrentState, "SettingCombo");
+            IsEqual(_lock.CurrentState, S.SettingCombo);
 
             _lock.PressKey(Lock.Keys.Key_1);
             _lock.PressKey(Lock.Keys.Key_2);
             _lock.PressKey(Lock.Keys.Key_3);
-            IsEqual(_lock.CurrentState, "SettingCombo");
+            IsEqual(_lock.CurrentState, S.SettingCombo);
 
             _lock.PressKey(Lock.Keys.Key_Set);
-            IsEqual(_lock.CurrentState, "Unlocked");
+            IsEqual(_lock.CurrentState, S.Unlocked);
 
             // Default state test.
             _lock.PressKey(Lock.Keys.Key_Reset);
-            IsEqual(_lock.CurrentState, "Locked");
+            IsEqual(_lock.CurrentState, S.Locked);
             _lock.PressKey(Lock.Keys.Key_Power);
-            IsEqual(_lock.CurrentState, "Locked");
-
-            _lock.InjectBadEvent();
-            IsEqual(_lock.CurrentState, SmEngine.DEF_STATE);
-            // The state machine is now dead and will no longer process events.
+            IsEqual(_lock.CurrentState, S.Locked);
 
             // Make a picture.
             string sdot = _lock.GenerateDot("Lock Logic");
