@@ -20,17 +20,11 @@ namespace NStateMachine
     /// <summary>Agnostic core engine of the state machine.</summary>
     public class SmEngine<S, E> where S : Enum where E : Enum
     {
-        #region Constants to make maps prettier
-        //public const SmFunc NO_FUNC = null;
-        //public const string DEF_STATE = "DEF_STATE";
-        //public const string SAME_STATE = "SAME_STATE";
-        //public const string DEF_EVENT = "DEF_EVENT";
-        #endregion
-
         #region Logging
         /// <summary>Log me please.</summary>
         public event EventHandler<LogInfo> LogEvent;
 
+        /// <summary>Log category.</summary>
         const string SM_LOG_CAT = "SMRT";
         #endregion
 
@@ -40,9 +34,6 @@ namespace NStateMachine
 
         /// <summary>All the states.</summary>
         readonly Dictionary<S, State<S, E>> _stateMap = new();
-
-        /// <summary>The default state if used.</summary>
-        State<S, E> _defaultState = null;
 
         /// <summary>The current state.</summary>
         State<S, E> _currentState = null;
@@ -173,39 +164,21 @@ namespace NStateMachine
             // Populate our collection from the client.
             foreach (State<S, E> st in _states)
             {
-                // Check for default state.
-                if ((int)(object)st.StateId == 0)
+                // Sanity check for duplicate state names.
+                if (!_stateMap.ContainsKey(st.StateId))
                 {
-                    if (_defaultState == null)
-                    {
-                        _defaultState = st;
-                    }
-                    else
-                    {
-                        errors.Add($"Multiple Default States");
-                    }
+                    _stateMap.Add(st.StateId, st);
                 }
                 else
                 {
-                    // Check for duplicate state names.
-                    if (!_stateMap.ContainsKey(st.StateId))
-                    {
-                        _stateMap.Add(st.StateId, st);
-                    }
-                    else
-                    {
-                        errors.Add($"Duplicate StateName[{st.StateId}]");
-                    }
+                    errors.Add($"Duplicate StateName[{st.StateId}]");
                 }
             }
-
-            // Initialize states and do sanity checking.
-           // List<S> keyList = new(_stateMap.Keys);
 
             // Errors in state inits?
             foreach (State<S, E> st in _stateMap.Values)
             {
-                errors.AddRange(st.Init());// keyList));
+                errors.AddRange(st.Init());
             }
 
             if (_stateMap.ContainsKey(initialState))
@@ -242,7 +215,7 @@ namespace NStateMachine
             lock (_locker)
             {
                 // Turn on for debugging sm workings.
-                Log(SM_LOG_CAT, $"ProcessEvent:{evt}:{o} in state:{_currentState.StateId}");
+                //Log(SM_LOG_CAT, $"ProcessEvent:{evt}:{o} in state:{_currentState.StateId}");
 
                 // Add the event to the queue.
                 _eventQueue.Enqueue(new EventInfo<S, E>(evt, o));
@@ -268,9 +241,9 @@ namespace NStateMachine
                             nextStateId = res.state;
                         }
                         // Try default state.
-                        else if (_defaultState != null)
+                        else if (_stateMap.ContainsKey((S)(object)0))
                         {
-                            res = _defaultState.ProcessEvent(ei);
+                            res = _stateMap[(S)(object)0].ProcessEvent(ei);
                             if (res.handled)
                             {
                                 handled = true;

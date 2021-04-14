@@ -3,14 +3,13 @@ using System.Collections.Generic;
 using System.IO;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
-using NStateMachine;
 
 
 namespace NStateMachine.Demo
 {
     /// <summary>
     /// Shows how to implement a state machine in an application.
-    /// Also does unit testing.
+    /// Also does rudimentary testing.
     /// </summary>
     public class DemoApp
     {

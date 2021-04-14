@@ -4,14 +4,8 @@ using System.Collections.Generic;
 
 namespace NStateMachine
 {
-    /// <summary>
-    /// Describes an individual state.
-    ///  - Each state must have a name, except the(optional) default state identified by DEF_STATE.
-    ///  - The current state is checked first, then the default state.
-    ///  - Each state must have one or more Transitions.
-    ///  - Each state may have an optional enter and/or exit action executed on state changes.Otherwise use NO_FUNC.
-    /// </summary>
-    public class State<S, E> where S: Enum where E : Enum
+    /// <summary>Describes an individual state. See README.md for usage.</summary>
+    public class State<S, E> where S : Enum where E : Enum
     {
         #region Properties
         /// <summary>The state name.</summary>
@@ -25,21 +19,17 @@ namespace NStateMachine
 
         /// <summary>All the transitions possible for this state. Only used for initialization.</summary>
         public Transitions<S, E> Transitions { get; init; } = null;
-
-        /// <summary>Massaged runtime version of Transitions. Key is event.</summary>
-        public Dictionary<E, Transition<S, E>> TransitionMap { get; init; } = new();
         #endregion
 
         #region Fields
-        /// <summary>Convenience reference to optional default transition.</summary>
-        private Transition<S, E> _defaultTransition = null; //TODO keep or fold in with map?
+        /// <summary>Massaged runtime version of Transitions. Key is event.</summary>
+        Dictionary<E, Transition<S, E>> _transitionMap = new();
         #endregion
 
         #region Public functions
         /// <summary>Initialize the state and its transitions.</summary>
-//        /// <param name="states">All valid states</param>
         /// <returns>List of any errors.</returns>
-        public List<string> Init()//List<S> states)
+        public List<string> Init()
         {
             List<string> errors = new();
 
@@ -49,43 +39,21 @@ namespace NStateMachine
                 errors.Add($"No transitions for State[{StateId}]"); 
             }
 
-            // Adjust transitions for DEF_STATE and SAME_STATE values.
             // Copy the transitions temporarily, ignoring the event names for now.
             Dictionary<string, Transition<S, E>> tempTrans = new();
             Transitions.ForEach(t => { tempTrans.Add(tempTrans.Count.ToString(), t); });
 
             foreach (Transition<S, E> t in tempTrans.Values)
             {
-                // Handle default condition.
-                if ((int)(object)t.EventId == 0)
+                // Add to final map.
+                if (!_transitionMap.ContainsKey(t.EventId))
                 {
-                    if (_defaultTransition is null)
-                    {
-                        _defaultTransition = t;
-                    }
-                    else
-                    {
-                        errors.Add($"Duplicate Default Event for State[{StateId}]");
-                    }
+                    _transitionMap.Add(t.EventId, t);
                 }
                 else
                 {
-                    // Add to final map.
-                    if (!TransitionMap.ContainsKey(t.EventId))
-                    {
-                        TransitionMap.Add(t.EventId, t);
-                    }
-                    else
-                    {
-                        errors.Add($"Duplicate EventName[{t.EventId}] for State[{StateId}]");
-                    }
+                    errors.Add($"Duplicate EventName[{t.EventId}] for State[{StateId}]");
                 }
-
-                //// Is the nextState valid? TODO not needed
-                //if (!states.Contains(t.NextState))
-                //{
-                //    errors.Add($"Undefined NextState[{t.NextState}] for Event[{ t.EventId}] for State[{StateId}]");
-                //}
             }
 
             return errors;
@@ -100,14 +68,14 @@ namespace NStateMachine
             S state = default;
 
             // Get the transition associated with the event.
-            if (TransitionMap.ContainsKey(ei.EventId))
+            if (_transitionMap.ContainsKey(ei.EventId))
             {
-                state = TransitionMap[ei.EventId].Execute(ei);
+                state = _transitionMap[ei.EventId].Execute(ei);
                 handled = true;
             }
-            else if (_defaultTransition != null) // default handler?
+            else if (_transitionMap.ContainsKey((E)(object)0))
             {
-                state = _defaultTransition.Execute(ei);
+                state = _transitionMap[(E)(object)0].Execute(ei);
                 handled = true;
             }
 
@@ -127,9 +95,14 @@ namespace NStateMachine
         #endregion
     }
 
-    /// <summary>Specialized container. Has Add() to support cleaner initialization.</summary>
+    /// <summary>Specialized container for syntactic sugar.</summary>
     public class States<S, E> : List<State<S, E>> where S : Enum where E : Enum
     {
+        /// <summary>Has Add() to support cleaner initialization.</summary>
+        /// <param name="stn"></param>
+        /// <param name="entry"></param>
+        /// <param name="exit"></param>
+        /// <param name="transitions"></param>
         public void Add(S stn, SmFunc entry, SmFunc exit, Transitions<S, E> transitions) =>
            Add(new() { StateId = stn, EntryFunc = entry, ExitFunc = exit, Transitions = transitions });
     }

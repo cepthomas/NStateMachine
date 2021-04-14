@@ -4,12 +4,7 @@ using System.Collections.Generic;
 
 namespace NStateMachine
 {
-    /// <summary>Describes an individual transition.
-    ///   - Each transition must have an event name, except the (optional) default transition identified by DEF_EVENT.
-    ///   - If a transition for the event name is not found, the DEF_EVENT transition is executed.
-    ///   - Each transition may have a next state name or SAME_STATE which stays in the same state.
-    ///   - Each transition may have an optional transition action. Otherwise use NO_FUNC.
-    /// </summary>
+    /// <summary>Describes an individual transition. See README.md for usage.</summary>
     public class Transition<S, E> where S : Enum where E : Enum
     {
         /// <summary>The name of the event that triggers this transition.</summary>
@@ -34,9 +29,13 @@ namespace NStateMachine
         public override string ToString() => $"{EventId} -> {NextState}";
     }
 
-    /// <summary>Specialized container. Has Add() to support cleaner initialization.</summary>
+    /// <summary>Specialized container for syntactic sugar.</summary>
     public class Transitions<S, E> : List<Transition<S, E>> where S : Enum where E : Enum
     {
+        /// <summary>Has Add() to support cleaner initialization.</summary>
+        /// <param name="evt"></param>
+        /// <param name="nextState"></param>
+        /// <param name="transFunc"></param>
         public void Add(E evt, S nextState, SmFunc transFunc) =>
             Add(new() { EventId = evt, NextState = nextState, TransitionFunc = transFunc });
     }

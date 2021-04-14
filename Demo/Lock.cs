@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using NStateMachine;
 
 
 namespace NStateMachine
@@ -10,7 +9,6 @@ namespace NStateMachine
 
     /// <summary>My events.</summary>
     public enum E { Default = 0, DigitKeyPressed, ForceFail, IsLocked, IsUnlocked, Reset, SetCombo, Shutdown, ValidCombo };
-
 
     /// <summary>An example state machine implementing a standard combination lock.</summary>
     public class Lock : SmEngine<S, E>
@@ -215,7 +213,7 @@ namespace NStateMachine
         void UnexpectedEvent(object o)
         {
             Log(LOCK_LOG_CAT, "UnexpectedEvent");
-            //throw new Exception("UnexpectedEvent");
+            // maybe throw new Exception("UnexpectedEvent");
         }
         #endregion
     }
