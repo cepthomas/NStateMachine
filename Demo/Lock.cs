@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 
 
-namespace NStateMachine
+namespace NStateMachine.Demo
 {
     /// <summary>My states.</summary>
     public enum S { Default = 0, Initial, Locked, Unlocked, SettingCombo, Failed };

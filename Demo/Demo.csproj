@@ -6,6 +6,10 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <None Remove="Lock.png" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\NStateMachine.csproj" />
   </ItemGroup>
 

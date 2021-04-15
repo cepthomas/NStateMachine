@@ -22,7 +22,7 @@ namespace NStateMachine.Demo
             _lock.LogEvent += Lock_LogEvent;
 
             var errors = _lock.Init();
-            IsEqual(errors.Count, 1); // There is one syntax error.
+            IsEqual(errors.Count, 0); // There is one syntax error.
             errors.ForEach(e => Lock_LogEvent(this, new LogInfo("APPSM", DateTime.Now, e)));
 
             _lock.Run();
@@ -77,7 +77,7 @@ namespace NStateMachine.Demo
             File.WriteAllText("testout.gv", sdot);
             using Process p = new();
             p.StartInfo.FileName = "dot";
-            p.StartInfo.Arguments = "-Tpng testout.gv -o testout.png";
+            p.StartInfo.Arguments = "-Tpng testout.gv -o ..\\..\\..\\testout.png";
             bool ok = p.Start();
         }
 

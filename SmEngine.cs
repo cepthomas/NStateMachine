@@ -36,7 +36,7 @@ namespace NStateMachine
         readonly Dictionary<S, State<S, E>> _stateMap = new();
 
         /// <summary>The current state.</summary>
-        State<S, E> _currentState = null;
+        State<S, E> _currentState = default;
 
         /// <summary>The event queue.</summary>
         readonly Queue<EventInfo<S, E>> _eventQueue = new();
@@ -46,11 +46,14 @@ namespace NStateMachine
 
         /// <summary>Flag to handle recursion in event processing.</summary>
         bool _processingEvents = false;
+
+        /// <summary>Cast helper.</summary>
+        S DEFAULT_STATE_ID = (S)(object)0;
         #endregion
 
         #region Properties
         /// <summary>Readable version of current state.</summary>
-        public S CurrentState => _currentState is null ? default : _currentState.StateId;
+        public S CurrentState => _currentState.StateId;
         #endregion
 
         #region Public functions
@@ -241,9 +244,9 @@ namespace NStateMachine
                             nextStateId = res.state;
                         }
                         // Try default state.
-                        else if (_stateMap.ContainsKey((S)(object)0))
+                        else if (_stateMap.ContainsKey(DEFAULT_STATE_ID))
                         {
-                            res = _stateMap[(S)(object)0].ProcessEvent(ei);
+                            res = _stateMap[DEFAULT_STATE_ID].ProcessEvent(ei);
                             if (res.handled)
                             {
                                 handled = true;
@@ -254,7 +257,7 @@ namespace NStateMachine
                         if (handled)
                         {
                             // Is there a state change?
-                            if ((int)(object)nextStateId != (int)(object)_currentState.StateId)
+                            if(nextStateId.CompareTo(_currentState.StateId) != 0)
                             {
                                 State<S, E> nextState = _stateMap[nextStateId];
                                 _currentState.Exit(ei.Param);
@@ -266,7 +269,7 @@ namespace NStateMachine
                         {
                             ok = false;
                             _eventQueue.Clear();
-                            throw new Exception($"Unhandled event:{ei.EventId} in state:{_currentState.StateId}"); //TODO better handling?
+                            Log(SM_LOG_CAT, $"Runtime Unhandled event:{ei.EventId} in state:{_currentState.StateId}");
                         }
                     }
                 }

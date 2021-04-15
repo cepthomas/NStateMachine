@@ -24,6 +24,9 @@ namespace NStateMachine
         #region Fields
         /// <summary>Massaged runtime version of Transitions. Key is event.</summary>
         Dictionary<E, Transition<S, E>> _transitionMap = new();
+
+        /// <summary>Cast helper.</summary>
+        E DEFAULT_EVENT_ID = (E)(object)0;
         #endregion
 
         #region Public functions
@@ -73,9 +76,9 @@ namespace NStateMachine
                 state = _transitionMap[ei.EventId].Execute(ei);
                 handled = true;
             }
-            else if (_transitionMap.ContainsKey((E)(object)0))
+            else if (_transitionMap.ContainsKey(DEFAULT_EVENT_ID))
             {
-                state = _transitionMap[(E)(object)0].Execute(ei);
+                state = _transitionMap[DEFAULT_EVENT_ID].Execute(ei);
                 handled = true;
             }
 
