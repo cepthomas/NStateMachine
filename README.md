@@ -1,7 +1,8 @@
 # NStateMachine
 - Semi-hierarchical sparse state machine for .NET.
 - Generates diagrams via dot.
-- Targets .NET 5 and C# 9. No dependencies on third party components.
+- Requires VS2019 and .NET5.
+. No dependencies on third party components.
 - System.Linq not used. Because it's too much like C++ templates.
 - NStateMachine assembly is a standalone assembly.
 - The Demo project is an example of how to use this and a unit test.
