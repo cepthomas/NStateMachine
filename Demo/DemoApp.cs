@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
+using NBagOfTricks.Slog;
 
 
 namespace NStateMachine.Demo
@@ -13,17 +14,24 @@ namespace NStateMachine.Demo
     /// </summary>
     public class DemoApp
     {
-        Lock _lock = null;
+        Lock? _lock = null;
+
+        readonly Logger _logger = LogManager.CreateLogger("DemoApp");
 
         public void Run()
         {
+            // Set up logging.
+            LogManager.MinLevelFile = Level.Trace;
+            LogManager.MinLevelNotif = Level.Debug;
+            LogManager.LogEvent += LogManager_LogEvent;
+            LogManager.Run();
+
             // Create a new combo lock.
             _lock = new();
-            _lock.LogEvent += Lock_LogEvent;
 
             var errors = _lock.Init();
             IsEqual(errors.Count, 0); // There is one syntax error.
-            errors.ForEach(e => Lock_LogEvent(this, new LogInfo("APPSM", DateTime.Now, e)));
+            errors.ForEach(e => _logger.LogError(e));
 
             _lock.Run();
 
@@ -79,13 +87,14 @@ namespace NStateMachine.Demo
             p.StartInfo.FileName = "dot";
             p.StartInfo.Arguments = "-Tpng testout.gv -o ..\\..\\..\\testout.png";
             bool ok = p.Start();
+
+            LogManager.Stop();
         }
 
-        void Lock_LogEvent(object sender, LogInfo e)
+        void LogManager_LogEvent(object? sender, LogEventArgs e)
         {
-            string s = $"{e.TimeStamp:yyyy'-'MM'-'dd HH':'mm':'ss.fff} {e.LogType} {e.Msg}";
-            Debug.WriteLine(s);
-            Console.WriteLine(s);
+            Debug.WriteLine(e.Message);
+            Console.WriteLine(e.Message);
         }
 
         void IsEqual<T>(T value1, T value2, [CallerFilePath] string file = "???", [CallerLineNumber] int line = -1) where T : IComparable
@@ -93,8 +102,7 @@ namespace NStateMachine.Demo
             if (value1.CompareTo(value2) != 0)
             {
                 string s = $"FAIL [{value1}] should be [{value2}] : {file}({line})";
-                Lock_LogEvent(this, new LogInfo("TESTF", DateTime.Now, s));
-                Console.WriteLine(s);
+                _logger.LogError(s);
             }
         }
     }

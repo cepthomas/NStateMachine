@@ -1,16 +1,36 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
-  <PropertyGroup>
-    <OutputType>WinExe</OutputType>
-    <TargetFramework>net5.0</TargetFramework>
-  </PropertyGroup>
+    <PropertyGroup>
+        <OutputType>WinExe</OutputType>
+        <RootNamespace>NStateMachine.Demo</RootNamespace>
+        <AssemblyName>NStateMachine.Demo</AssemblyName>
+        <TargetFramework>net5.0-windows</TargetFramework>
+        <UseWindowsForms>true</UseWindowsForms>
+        <Deterministic>False</Deterministic>
+        <Description>NStateMachine.Demo</Description>
+        <Copyright>MIT License</Copyright>
+        <!-- <DefineConstants>DEBUG;TRACE</DefineConstants> -->
+        <OutputPath>bin\</OutputPath>
+        <WarningLevel>4</WarningLevel>
+        <NoWarn>CS1591</NoWarn>
+        <Nullable>enable</Nullable>
+        <GenerateDocumentationFile>true</GenerateDocumentationFile>
+        <SatelliteResourceLanguages>none</SatelliteResourceLanguages>
+        <!-- en none -->
+    </PropertyGroup>
 
-  <ItemGroup>
-    <None Remove="Lock.png" />
-  </ItemGroup>
+    <ItemGroup>
+      <PackageReference Include="System.Drawing.Common" Version="6.0.0" />
+    </ItemGroup>
 
-  <ItemGroup>
-    <ProjectReference Include="..\NStateMachine.csproj" />
-  </ItemGroup>
+    <ItemGroup>
+        <ProjectReference Include="..\NStateMachine.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <Reference Include="NBagOfTricks">
+        <HintPath>..\lib\NBagOfTricks.dll</HintPath>
+      </Reference>
+    </ItemGroup>
 
 </Project>

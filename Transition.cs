@@ -8,19 +8,21 @@ namespace NStateMachine
     public class Transition<S, E> where S : Enum where E : Enum
     {
         /// <summary>The name of the event that triggers this transition.</summary>
-        public E EventId { get; internal set; } = default;
+        public E EventId { get; internal set; } = Common<S, E>.DEFAULT_EVENT_ID;
 
         /// <summary>Change state to this after execution action.</summary>
-        public S NextState { get; internal set; } = default;
+        public S NextState { get; internal set; } = Common<S, E>.DEFAULT_STATE_ID;
 
         /// <summary>Optional action - executed before state change</summary>
-        public SmFunc TransitionFunc { get; internal set; } = null;
+        public SmFunc? TransitionFunc { get; internal set; } = null;
 
         /// <summary>Execute transition action.</summary>
         /// <param name="ei">Event information</param>
         /// <returns>The next state</returns>
-        public S Execute(EventInfo<S, E> ei)
+        public S? Execute(EventInfo<S, E> ei)
         {
+            Enum.GetValues(typeof(E));
+
             TransitionFunc?.Invoke(ei.Param);
             return NextState;
         }
@@ -36,7 +38,7 @@ namespace NStateMachine
         /// <param name="evt"></param>
         /// <param name="nextState"></param>
         /// <param name="transFunc"></param>
-        public void Add(E evt, S nextState, SmFunc transFunc) =>
+        public void Add(E evt, S nextState, SmFunc? transFunc) =>
             Add(new() { EventId = evt, NextState = nextState, TransitionFunc = transFunc });
     }
 }    

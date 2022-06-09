@@ -3,40 +3,23 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Reflection;
 using System.Text;
+using NBagOfTricks.Slog;
+
 
 namespace NStateMachine
 {
-    /// <summary>Definition for transition/entry/exit functions.</summary>
-    /// <param name="o">Optional data.</param>
-    public delegate void SmFunc(object o);
-
-    /// <summary>Data carrying class.</summary>
-    public record EventInfo<S, E>(E EventId, object Param);
-
-    /// <summary>For tracing.</summary>
-    public record LogInfo(string LogType, DateTime TimeStamp, string Msg);
-
-
     /// <summary>Agnostic core engine of the state machine.</summary>
     public class SmEngine<S, E> where S : Enum where E : Enum
     {
-        #region Logging
-        /// <summary>Log me please.</summary>
-        public event EventHandler<LogInfo> LogEvent;
-
-        /// <summary>Log category.</summary>
-        const string SM_LOG_CAT = "SMRT";
-        #endregion
-
         #region Fields
         /// <summary>The original.</summary>
-        protected States<S, E> _states = null;
+        protected States<S, E> _states = new();
 
         /// <summary>All the states.</summary>
         readonly Dictionary<S, State<S, E>> _stateMap = new();
 
         /// <summary>The current state.</summary>
-        State<S, E> _currentState = default;
+        State<S, E> _currentState = new();
 
         /// <summary>The event queue.</summary>
         readonly Queue<EventInfo<S, E>> _eventQueue = new();
@@ -47,8 +30,8 @@ namespace NStateMachine
         /// <summary>Flag to handle recursion in event processing.</summary>
         bool _processingEvents = false;
 
-        /// <summary>Cast helper.</summary>
-        S DEFAULT_STATE_ID = (S)(object)0;
+        /// <summary>My logger.</summary>
+        readonly Logger _logger = LogManager.CreateLogger("SmEngine");
         #endregion
 
         #region Properties
@@ -57,6 +40,7 @@ namespace NStateMachine
         #endregion
 
         #region Public functions
+
         /// <summary>
         /// Generate DOT markup and create a picture.
         /// </summary>
@@ -201,7 +185,7 @@ namespace NStateMachine
         /// </summary>
         protected void StartSm()
         {
-            _currentState.Enter(null);
+            _currentState.Enter();
         }
 
         /// <summary>
@@ -211,14 +195,14 @@ namespace NStateMachine
         /// <param name="evt">Incoming event.</param>
         /// <param name="o">Optional event data.</param>
         /// <returns>Ok or error.</returns>
-        protected bool ProcessEvent(E evt, object o = null)
+        protected bool ProcessEvent(E evt, object? o = null)
         {
             bool ok = true;
 
             lock (_locker)
             {
                 // Turn on for debugging sm workings.
-                //Log(SM_LOG_CAT, $"ProcessEvent:{evt}:{o} in state:{_currentState.StateId}");
+                _logger.LogTrace($"ProcessEvent:{evt}:{o} in state:{_currentState.StateId}");
 
                 // Add the event to the queue.
                 _eventQueue.Enqueue(new EventInfo<S, E>(evt, o));
@@ -233,7 +217,7 @@ namespace NStateMachine
                     {
                         EventInfo<S, E> ei = _eventQueue.Dequeue();
 
-                        S nextStateId = default;
+                        S? nextStateId = default;
                         bool handled = false;
 
                         // Try current state.
@@ -244,9 +228,9 @@ namespace NStateMachine
                             nextStateId = res.state;
                         }
                         // Try default state.
-                        else if (_stateMap.ContainsKey(DEFAULT_STATE_ID))
+                        else if (_stateMap.ContainsKey(Common<S, E>.DEFAULT_STATE_ID))
                         {
-                            res = _stateMap[DEFAULT_STATE_ID].ProcessEvent(ei);
+                            res = _stateMap[Common<S, E>.DEFAULT_STATE_ID].ProcessEvent(ei);
                             if (res.handled)
                             {
                                 handled = true;
@@ -257,19 +241,22 @@ namespace NStateMachine
                         if (handled)
                         {
                             // Is there a state change?
-                            if(nextStateId.CompareTo(_currentState.StateId) != 0)
+                            if(nextStateId is not null)
                             {
-                                State<S, E> nextState = _stateMap[nextStateId];
-                                _currentState.Exit(ei.Param);
-                                _currentState = nextState;
-                                _currentState.Enter(ei.Param);
+                                if (nextStateId.CompareTo(_currentState.StateId) != 0)
+                                {
+                                    State<S, E> nextState = _stateMap[nextStateId];
+                                    _currentState.Exit(ei.Param);
+                                    _currentState = nextState;
+                                    _currentState.Enter(ei.Param);
+                                }
                             }
                         }
                         else
                         {
                             ok = false;
                             _eventQueue.Clear();
-                            Log(SM_LOG_CAT, $"Runtime Unhandled event:{ei.EventId} in state:{_currentState.StateId}");
+                            _logger.LogError($"Runtime Unhandled event:{ei.EventId} in state:{_currentState.StateId}");
                         }
                     }
                 }
@@ -290,17 +277,9 @@ namespace NStateMachine
         static string GetFuncName(object o, string prop)
         {
             var sf = o.GetType().GetProperty(prop);
-            var fn = sf.GetValue(o, null);
-            string funcname = fn is not null ? $":{(fn as SmFunc).Method.Name}" : "";
+            var fn = sf!.GetValue(o, null);
+            string funcname = fn is not null ? $":{((SmFunc)fn).Method.Name}" : "";
             return funcname;
-        }
-
-        /// <summary>Trace/logging function.</summary>
-        /// <param name="cat">Printable category.</param>
-        /// <param name="msg">What to add.</param>
-        protected void Log(string cat, string msg)
-        {
-            LogEvent?.Invoke(this, new LogInfo(cat, DateTime.Now, msg));
         }
         #endregion
     }

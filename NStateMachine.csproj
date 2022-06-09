@@ -1,19 +1,46 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
-  <PropertyGroup>
-    <OutputType>Library</OutputType>
-    <TargetFramework>net5.0</TargetFramework>
-  </PropertyGroup>
+    <PropertyGroup>
+        <OutputType>Library</OutputType>
+        <RootNamespace>NStateMachine</RootNamespace>
+        <AssemblyName>NStateMachine</AssemblyName>
+        <TargetFramework>net5.0-windows</TargetFramework>
+        <UseWindowsForms>true</UseWindowsForms>
+        <Deterministic>False</Deterministic>
+        <Description>NStateMachine</Description>
+        <Copyright>MIT License</Copyright>
+        <!-- <DefineConstants>DEBUG;TRACE</DefineConstants> -->
+        <OutputPath>bin\</OutputPath>
+        <WarningLevel>4</WarningLevel>
+        <NoWarn>CS1591;CA2211</NoWarn>
+        <Nullable>enable</Nullable>
+        <GenerateDocumentationFile>true</GenerateDocumentationFile>
+        <SatelliteResourceLanguages>none</SatelliteResourceLanguages>
+        <!-- en none -->
+    </PropertyGroup>
 
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
-    <DocumentationFile>bin\Debug\net5.0\NStateMachine.xml</DocumentationFile>
-    <OutputPath>bin\</OutputPath>
-  </PropertyGroup>
+    <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+        <DocumentationFile>bin\Debug\net5.0\NStateMachine.xml</DocumentationFile>
+        <OutputPath>bin\</OutputPath>
+    </PropertyGroup>
 
-  <ItemGroup>
-    <Compile Remove="Demo\**" />
-    <EmbeddedResource Remove="Demo\**" />
-    <None Remove="Demo\**" />
-  </ItemGroup>
+    <ItemGroup>
+        <Compile Remove="Demo\**" />
+        <Compile Remove="lib\**" />
+        <EmbeddedResource Remove="Demo\**" />
+        <EmbeddedResource Remove="lib\**" />
+        <None Remove="Demo\**" />
+        <None Remove="lib\**" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <PackageReference Include="System.Drawing.Common" Version="6.0.0" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <Reference Include="NBagOfTricks">
+            <HintPath>lib\NBagOfTricks.dll</HintPath>
+        </Reference>
+    </ItemGroup>
 
 </Project>

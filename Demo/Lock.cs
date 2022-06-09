@@ -1,18 +1,21 @@
 using System;
 using System.Collections.Generic;
+using NBagOfTricks.Slog;
 
 
 namespace NStateMachine.Demo
 {
-    /// <summary>My states.</summary>
+    /// <summary>My states. Default must be 0.</summary>
     public enum S { Default = 0, Initial, Locked, Unlocked, SettingCombo, Failed };
 
-    /// <summary>My events.</summary>
+    /// <summary>My events. Default must be 0.</summary>
     public enum E { Default = 0, DigitKeyPressed, ForceFail, IsLocked, IsUnlocked, Reset, SetCombo, Shutdown, ValidCombo };
 
     /// <summary>An example state machine implementing a standard combination lock.</summary>
     public class Lock : SmEngine<S, E>
     {
+        readonly Logger _logger = LogManager.CreateLogger("Lock");
+
         /// <summary>Specify the state machine functionality.</summary>
         /// <returns>List of syntax errors.</returns>
         void CreateMap()
@@ -79,8 +82,6 @@ namespace NStateMachine.Demo
 
         /// <summary>Current state of the lock.</summary>
         bool _isLocked = true;
-
-        const string LOCK_LOG_CAT = "LOCK";
         #endregion
 
         #region Public API - called from main application loop
@@ -105,7 +106,7 @@ namespace NStateMachine.Demo
         /// <param name="key">Key pressed on the keypad</param>
         public void PressKey(Keys key)
         {
-            Log(LOCK_LOG_CAT, $"KeyPressed:{key}");
+            _logger.LogDebug($"KeyPressed:{key}");
 
             _ = key switch
             {
@@ -119,38 +120,38 @@ namespace NStateMachine.Demo
 
         #region Transition functions - private
         /// <summary>Initialize the lock</summary>
-        void InitialEnter(object o)
+        void InitialEnter(object? o)
         {
-            Log(LOCK_LOG_CAT, $"InitialEnter:{o}");
+            _logger.LogDebug($"InitialEnter:{o}");
             ProcessEvent(_isLocked ? E.IsLocked : E.IsUnlocked);
         }
 
         /// <summary>Dummy function</summary>
-        void InitialExit(object o)
+        void InitialExit(object? o)
         {
-            Log(LOCK_LOG_CAT, $"InitialExit:{o}");
+            _logger.LogDebug($"InitialExit:{o}");
         }
 
         /// <summary>Locked transition function.</summary>
-        void LockedEnter(object o)
+        void LockedEnter(object? o)
         {
-            Log(LOCK_LOG_CAT, $"LockedEnter:{o}");
+            _logger.LogDebug($"LockedEnter:{o}");
             _isLocked = true;
             _currentEntry.Clear();
         }
 
         /// <summary>Clear the lock</summary>
-        void ClearCurrentEntry(object o)
+        void ClearCurrentEntry(object? o)
         {
-            Log(LOCK_LOG_CAT, $"ClearCurrentEntry:{o}");
+            _logger.LogDebug($"ClearCurrentEntry:{o}");
             _currentEntry.Clear();
         }
 
         /// <summary>Add a digit to the current sequence.</summary>
-        void LockedAddDigit(object o)
+        void LockedAddDigit(object? o)
         {
-            Log(LOCK_LOG_CAT, $"LockedAddDigit:{o}");
-            Keys key = (Keys)o;
+            _logger.LogDebug($"LockedAddDigit:{o}");
+            Keys key = (Keys)o!;
 
             _currentEntry.Add(key);
 
@@ -168,17 +169,17 @@ namespace NStateMachine.Demo
         }
 
         /// <summary>Add a digit to the current sequence.</summary>
-        void SetComboAddDigit(object o)
+        void SetComboAddDigit(object? o)
         {
-            Log(LOCK_LOG_CAT, $"SetComboAddDigit:{o}");
-            Keys key = (Keys)o;
+            _logger.LogDebug($"SetComboAddDigit:{o}");
+            Keys key = (Keys)o!;
             _currentEntry.Add(key);
         }
 
         /// <summary>Try setting a new combination.</summary>
-        void SetCombo(object o)
+        void SetCombo(object? o)
         {
-            Log(LOCK_LOG_CAT, $"SetCombo:{o}");
+            _logger.LogDebug($"SetCombo:{o}");
             if (_currentEntry.Count > 0)
             {
                 _combination.Clear();
@@ -188,31 +189,31 @@ namespace NStateMachine.Demo
         }
 
         /// <summary>Lock is unlocked now.</summary>
-        void UnlockedEnter(object o)
+        void UnlockedEnter(object? o)
         {
-            Log(LOCK_LOG_CAT, $"UnlockedEnter:{o}");
+            _logger.LogDebug($"UnlockedEnter:{o}");
             _isLocked = false;
         }
 
         /// <summary>Clear the lock.</summary>
-        void ResetAll(object o)
+        void ResetAll(object? o)
         {
-            Log(LOCK_LOG_CAT, $"ClearCurrentEntry:{o}");
+            _logger.LogDebug($"ClearCurrentEntry:{o}");
             _isLocked = true;
             _currentEntry.Clear();
         }
 
         /// <summary>Cause an exception to be thrown.</summary>
-        void ForceFail(object o)
+        void ForceFail(object? o)
         {
-            Log(LOCK_LOG_CAT, "ForceFail");
+            _logger.LogDebug("ForceFail");
             throw new Exception("ForceFail");
         }
 
         /// <summary>Runtime bad event. Do something app-specific.</summary>
-        void UnexpectedEvent(object o)
+        void UnexpectedEvent(object? o)
         {
-            Log(LOCK_LOG_CAT, "UnexpectedEvent");
+            _logger.LogDebug("UnexpectedEvent");
             // maybe throw new Exception("UnexpectedEvent");
         }
         #endregion

@@ -8,25 +8,22 @@ namespace NStateMachine
     public class State<S, E> where S : Enum where E : Enum
     {
         #region Properties
-        /// <summary>The state name.</summary>
-        public S StateId { get; internal set; } = default;
+        /// <summary>The state id.</summary>
+        public S StateId { get; internal set; } = Common<S, E>.DEFAULT_STATE_ID;
 
         /// <summary>Optional state entry action.</summary>
-        public SmFunc EntryFunc { get; init; } = null;
+        public SmFunc? EntryFunc { get; init; } = null;
 
         /// <summary>Optional state exit action.</summary>
-        public SmFunc ExitFunc { get; init; } = null;
+        public SmFunc? ExitFunc { get; init; } = null;
 
         /// <summary>All the transitions possible for this state. Only used for initialization.</summary>
-        public Transitions<S, E> Transitions { get; init; } = null;
+        public Transitions<S, E> Transitions { get; init; } = new();
         #endregion
 
         #region Fields
         /// <summary>Massaged runtime version of Transitions. Key is event.</summary>
-        Dictionary<E, Transition<S, E>> _transitionMap = new();
-
-        /// <summary>Cast helper.</summary>
-        E DEFAULT_EVENT_ID = (E)(object)0;
+        readonly Dictionary<E, Transition<S, E>> _transitionMap = new();
         #endregion
 
         #region Public functions
@@ -65,10 +62,10 @@ namespace NStateMachine
         /// <summary>Process the event. Execute transition if found, otherwise return indication and let the caller handle it.</summary>
         /// <param name="ei">The event information.</param>
         /// <returns>A tuple indicating if this was handled and if true the next state.</returns>
-        public (bool handled, S state) ProcessEvent(EventInfo<S, E> ei)
+        public (bool handled, S? state) ProcessEvent(EventInfo<S, E> ei)
         {
             bool handled = false;
-            S state = default;
+            S? state = default;
 
             // Get the transition associated with the event.
             if (_transitionMap.ContainsKey(ei.EventId))
@@ -76,9 +73,9 @@ namespace NStateMachine
                 state = _transitionMap[ei.EventId].Execute(ei);
                 handled = true;
             }
-            else if (_transitionMap.ContainsKey(DEFAULT_EVENT_ID))
+            else if (_transitionMap.ContainsKey(Common<S, E>.DEFAULT_EVENT_ID))
             {
-                state = _transitionMap[DEFAULT_EVENT_ID].Execute(ei);
+                state = _transitionMap[Common<S, E>.DEFAULT_EVENT_ID].Execute(ei);
                 handled = true;
             }
 
@@ -87,11 +84,11 @@ namespace NStateMachine
 
         /// <summary>Enter the state by executing the enter action</summary>
         /// <param name="o">Optional data object</param>
-        public void Enter(object o) => EntryFunc?.Invoke(o);
+        public void Enter(object? o = null) => EntryFunc?.Invoke(o);
 
         /// <summary>Exit the state by executing the exit action</summary>
         /// <param name="o">Optional data object</param>
-        public void Exit(object o) => ExitFunc?.Invoke(o);
+        public void Exit(object? o = null) => ExitFunc?.Invoke(o);
 
         /// <summary>Readable version.</summary>
         public override string ToString() => $"{StateId}";
@@ -106,7 +103,7 @@ namespace NStateMachine
         /// <param name="entry"></param>
         /// <param name="exit"></param>
         /// <param name="transitions"></param>
-        public void Add(S stn, SmFunc entry, SmFunc exit, Transitions<S, E> transitions) =>
+        public void Add(S stn, SmFunc? entry, SmFunc? exit, Transitions<S, E> transitions) =>
            Add(new() { StateId = stn, EntryFunc = entry, ExitFunc = exit, Transitions = transitions });
     }
 }    
