@@ -21,8 +21,8 @@ namespace NStateMachine.Demo
         public void Run()
         {
             // Set up logging.
-            LogManager.MinLevelFile = Level.Trace;
-            LogManager.MinLevelNotif = Level.Debug;
+            LogManager.MinLevelFile = LogLevel.Trace;
+            LogManager.MinLevelNotif = LogLevel.Debug;
             LogManager.LogEvent += LogManager_LogEvent;
             LogManager.Run();
 
@@ -31,7 +31,7 @@ namespace NStateMachine.Demo
 
             var errors = _lock.Init();
             IsEqual(errors.Count, 0); // There is one syntax error.
-            errors.ForEach(e => _logger.LogError(e));
+            errors.ForEach(e => _logger.Error(e));
 
             _lock.Run();
 
@@ -102,7 +102,7 @@ namespace NStateMachine.Demo
             if (value1.CompareTo(value2) != 0)
             {
                 string s = $"FAIL [{value1}] should be [{value2}] : {file}({line})";
-                _logger.LogError(s);
+                _logger.Error(s);
             }
         }
     }

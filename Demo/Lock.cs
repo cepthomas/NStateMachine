@@ -106,7 +106,7 @@ namespace NStateMachine.Demo
         /// <param name="key">Key pressed on the keypad</param>
         public void PressKey(Keys key)
         {
-            _logger.LogDebug($"KeyPressed:{key}");
+            _logger.Debug($"KeyPressed:{key}");
 
             _ = key switch
             {
@@ -122,20 +122,20 @@ namespace NStateMachine.Demo
         /// <summary>Initialize the lock</summary>
         void InitialEnter(object? o)
         {
-            _logger.LogDebug($"InitialEnter:{o}");
+            _logger.Debug($"InitialEnter:{o}");
             ProcessEvent(_isLocked ? E.IsLocked : E.IsUnlocked);
         }
 
         /// <summary>Dummy function</summary>
         void InitialExit(object? o)
         {
-            _logger.LogDebug($"InitialExit:{o}");
+            _logger.Debug($"InitialExit:{o}");
         }
 
         /// <summary>Locked transition function.</summary>
         void LockedEnter(object? o)
         {
-            _logger.LogDebug($"LockedEnter:{o}");
+            _logger.Debug($"LockedEnter:{o}");
             _isLocked = true;
             _currentEntry.Clear();
         }
@@ -143,14 +143,14 @@ namespace NStateMachine.Demo
         /// <summary>Clear the lock</summary>
         void ClearCurrentEntry(object? o)
         {
-            _logger.LogDebug($"ClearCurrentEntry:{o}");
+            _logger.Debug($"ClearCurrentEntry:{o}");
             _currentEntry.Clear();
         }
 
         /// <summary>Add a digit to the current sequence.</summary>
         void LockedAddDigit(object? o)
         {
-            _logger.LogDebug($"LockedAddDigit:{o}");
+            _logger.Debug($"LockedAddDigit:{o}");
             Keys key = (Keys)o!;
 
             _currentEntry.Add(key);
@@ -171,7 +171,7 @@ namespace NStateMachine.Demo
         /// <summary>Add a digit to the current sequence.</summary>
         void SetComboAddDigit(object? o)
         {
-            _logger.LogDebug($"SetComboAddDigit:{o}");
+            _logger.Debug($"SetComboAddDigit:{o}");
             Keys key = (Keys)o!;
             _currentEntry.Add(key);
         }
@@ -179,7 +179,7 @@ namespace NStateMachine.Demo
         /// <summary>Try setting a new combination.</summary>
         void SetCombo(object? o)
         {
-            _logger.LogDebug($"SetCombo:{o}");
+            _logger.Debug($"SetCombo:{o}");
             if (_currentEntry.Count > 0)
             {
                 _combination.Clear();
@@ -191,14 +191,14 @@ namespace NStateMachine.Demo
         /// <summary>Lock is unlocked now.</summary>
         void UnlockedEnter(object? o)
         {
-            _logger.LogDebug($"UnlockedEnter:{o}");
+            _logger.Debug($"UnlockedEnter:{o}");
             _isLocked = false;
         }
 
         /// <summary>Clear the lock.</summary>
         void ResetAll(object? o)
         {
-            _logger.LogDebug($"ClearCurrentEntry:{o}");
+            _logger.Debug($"ClearCurrentEntry:{o}");
             _isLocked = true;
             _currentEntry.Clear();
         }
@@ -206,14 +206,14 @@ namespace NStateMachine.Demo
         /// <summary>Cause an exception to be thrown.</summary>
         void ForceFail(object? o)
         {
-            _logger.LogDebug("ForceFail");
+            _logger.Debug("ForceFail");
             throw new Exception("ForceFail");
         }
 
         /// <summary>Runtime bad event. Do something app-specific.</summary>
         void UnexpectedEvent(object? o)
         {
-            _logger.LogDebug("UnexpectedEvent");
+            _logger.Debug("UnexpectedEvent");
             // maybe throw new Exception("UnexpectedEvent");
         }
         #endregion

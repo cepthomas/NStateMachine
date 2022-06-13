@@ -202,7 +202,7 @@ namespace NStateMachine
             lock (_locker)
             {
                 // Turn on for debugging sm workings.
-                _logger.LogTrace($"ProcessEvent:{evt}:{o} in state:{_currentState.StateId}");
+                _logger.Trace($"ProcessEvent:{evt}:{o} in state:{_currentState.StateId}");
 
                 // Add the event to the queue.
                 _eventQueue.Enqueue(new EventInfo<S, E>(evt, o));
@@ -256,7 +256,7 @@ namespace NStateMachine
                         {
                             ok = false;
                             _eventQueue.Clear();
-                            _logger.LogError($"Runtime Unhandled event:{ei.EventId} in state:{_currentState.StateId}");
+                            _logger.Error($"Runtime Unhandled event:{ei.EventId} in state:{_currentState.StateId}");
                         }
                     }
                 }
