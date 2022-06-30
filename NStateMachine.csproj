@@ -4,7 +4,7 @@
         <OutputType>Library</OutputType>
         <RootNamespace>NStateMachine</RootNamespace>
         <AssemblyName>NStateMachine</AssemblyName>
-        <TargetFramework>net5.0-windows</TargetFramework>
+        <TargetFramework>net6.0-windows</TargetFramework>
         <UseWindowsForms>true</UseWindowsForms>
         <Deterministic>False</Deterministic>
         <Description>NStateMachine</Description>
