@@ -5,7 +5,7 @@
 . No dependencies on third party components.
 - The Demo project is an example of how to use this, and a unit test.
 
-Requires VS2022 and .NET6.
+Requires VS2022 and .NET6. No external dependencies.
 
 # Usage
 
