@@ -7,6 +7,11 @@ namespace NStateMachine
     /// <summary>Describes an individual state. See README.md for usage.</summary>
     public class State<S, E> where S : Enum where E : Enum
     {
+        #region Fields
+        /// <summary>Massaged runtime version of Transitions. Key is event.</summary>
+        readonly Dictionary<E, Transition<S, E>> _transitionMap = new();
+        #endregion
+
         #region Properties
         /// <summary>The state id.</summary>
         public S StateId { get; internal set; } = Common<S, E>.DEFAULT_STATE_ID;
@@ -19,11 +24,6 @@ namespace NStateMachine
 
         /// <summary>All the transitions possible for this state. Only used for initialization.</summary>
         public Transitions<S, E> Transitions { get; init; } = new();
-        #endregion
-
-        #region Fields
-        /// <summary>Massaged runtime version of Transitions. Key is event.</summary>
-        readonly Dictionary<E, Transition<S, E>> _transitionMap = new();
         #endregion
 
         #region Public functions
