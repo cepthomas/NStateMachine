@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 
 
-namespace NStateMachine
+namespace Ephemera.NStateMachine
 {
     /// <summary>Describes an individual state. See README.md for usage.</summary>
     public class State<S, E> where S : Enum where E : Enum

@@ -2,8 +2,8 @@
 
     <PropertyGroup>
         <OutputType>WinExe</OutputType>
-        <RootNamespace>NStateMachine.Demo</RootNamespace>
-        <AssemblyName>NStateMachine.Demo</AssemblyName>
+        <RootNamespace>Ephemera.NStateMachine.Demo</RootNamespace>
+        <AssemblyName>Ephemera.NStateMachine.Demo</AssemblyName>
         <TargetFramework>net6.0-windows</TargetFramework>
         <UseWindowsForms>true</UseWindowsForms>
         <Deterministic>False</Deterministic>
@@ -28,8 +28,8 @@
     </ItemGroup>
 
     <ItemGroup>
-        <Reference Include="NBagOfTricks">
-          <HintPath>..\lib\NBagOfTricks.dll</HintPath>
+        <Reference Include="Ephemera.NBagOfTricks">
+          <HintPath>..\lib\Ephemera.NBagOfTricks.dll</HintPath>
         </Reference>
     </ItemGroup>
 

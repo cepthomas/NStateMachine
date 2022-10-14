@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 
 
-namespace NStateMachine
+namespace Ephemera.NStateMachine
 {
     /// <summary>Describes an individual transition. See README.md for usage.</summary>
     public class Transition<S, E> where S : Enum where E : Enum

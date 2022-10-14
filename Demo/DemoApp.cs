@@ -3,10 +3,10 @@ using System.Collections.Generic;
 using System.IO;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
-using NBagOfTricks.Slog;
+using Ephemera.NBagOfTricks.Slog;
 
 
-namespace NStateMachine.Demo
+namespace Ephemera.NStateMachine.Demo
 {
     /// <summary>
     /// Shows how to implement a state machine in an application.

@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace NStateMachine
+namespace Ephemera.NStateMachine
 {
     /// <summary>Definition for transition/entry/exit functions.</summary>
     /// <param name="o">Optional data.</param>

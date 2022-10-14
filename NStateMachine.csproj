@@ -2,8 +2,8 @@
 
     <PropertyGroup>
         <OutputType>Library</OutputType>
-        <RootNamespace>NStateMachine</RootNamespace>
-        <AssemblyName>NStateMachine</AssemblyName>
+        <RootNamespace>Ephemera.NStateMachine</RootNamespace>
+        <AssemblyName>Ephemera.NStateMachine</AssemblyName>
         <TargetFramework>net6.0-windows</TargetFramework>
         <UseWindowsForms>true</UseWindowsForms>
         <Deterministic>False</Deterministic>
@@ -17,11 +17,6 @@
         <GenerateDocumentationFile>true</GenerateDocumentationFile>
         <SatelliteResourceLanguages>none</SatelliteResourceLanguages>
         <!-- en none -->
-    </PropertyGroup>
-
-    <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
-        <DocumentationFile>bin\Debug\net5.0\NStateMachine.xml</DocumentationFile>
-        <OutputPath>bin\</OutputPath>
     </PropertyGroup>
 
     <ItemGroup>
@@ -38,8 +33,8 @@
     </ItemGroup>
 
     <ItemGroup>
-        <Reference Include="NBagOfTricks">
-            <HintPath>lib\NBagOfTricks.dll</HintPath>
+        <Reference Include="Ephemera.NBagOfTricks">
+            <HintPath>lib\Ephemera.NBagOfTricks.dll</HintPath>
         </Reference>
     </ItemGroup>
 

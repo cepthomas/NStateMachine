@@ -3,10 +3,10 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Reflection;
 using System.Text;
-using NBagOfTricks.Slog;
+using Ephemera.NBagOfTricks.Slog;
 
 
-namespace NStateMachine
+namespace Ephemera.NStateMachine
 {
     /// <summary>Agnostic core engine of the state machine.</summary>
     public class SmEngine<S, E> where S : Enum where E : Enum

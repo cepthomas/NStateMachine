@@ -1,3 +1,3 @@
 ﻿
 // New: Top-level statement.
-new NStateMachine.Demo.DemoApp().Run();
+new Ephemera.NStateMachine.Demo.DemoApp().Run();

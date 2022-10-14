@@ -1,9 +1,9 @@
 using System;
 using System.Collections.Generic;
-using NBagOfTricks.Slog;
+using Ephemera.NBagOfTricks.Slog;
 
 
-namespace NStateMachine.Demo
+namespace Ephemera.NStateMachine.Demo
 {
     /// <summary>My states. Default must be 0.</summary>
     public enum S { Default = 0, Initial, Locked, Unlocked, SettingCombo, Failed };
