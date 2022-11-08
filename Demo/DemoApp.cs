@@ -23,7 +23,7 @@ namespace Ephemera.NStateMachine.Demo
             // Set up logging.
             LogManager.MinLevelFile = LogLevel.Trace;
             LogManager.MinLevelNotif = LogLevel.Debug;
-            LogManager.LogEvent += LogManager_LogEvent;
+            LogManager.LogMessage += LogManager_LogMessage;
             LogManager.Run();
 
             // Create a new combo lock.
@@ -91,7 +91,7 @@ namespace Ephemera.NStateMachine.Demo
             LogManager.Stop();
         }
 
-        void LogManager_LogEvent(object? sender, LogEventArgs e)
+        void LogManager_LogMessage(object? sender, LogMessageEventArgs e)
         {
             Debug.WriteLine(e.Message);
             Console.WriteLine(e.Message);
