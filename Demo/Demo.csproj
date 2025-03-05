@@ -4,8 +4,9 @@
         <OutputType>WinExe</OutputType>
         <RootNamespace>Ephemera.NStateMachine.Demo</RootNamespace>
         <AssemblyName>Ephemera.NStateMachine.Demo</AssemblyName>
-        <TargetFramework>net6.0-windows</TargetFramework>
+        <TargetFramework>net8.0-windows</TargetFramework>
         <UseWindowsForms>true</UseWindowsForms>
+        <Version>1.2.0</Version>
         <Deterministic>False</Deterministic>
         <Description>NStateMachine.Demo</Description>
         <Copyright>MIT License</Copyright>

@@ -4,7 +4,8 @@
         <OutputType>Library</OutputType>
         <RootNamespace>Ephemera.NStateMachine</RootNamespace>
         <AssemblyName>Ephemera.NStateMachine</AssemblyName>
-        <TargetFramework>net6.0-windows</TargetFramework>
+        <TargetFramework>net8.0-windows</TargetFramework>
+        <Version>1.2.0</Version>
         <UseWindowsForms>true</UseWindowsForms>
         <Deterministic>False</Deterministic>
         <Description>NStateMachine</Description>
