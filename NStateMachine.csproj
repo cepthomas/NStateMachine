@@ -5,7 +5,7 @@
         <RootNamespace>Ephemera.NStateMachine</RootNamespace>
         <AssemblyName>Ephemera.NStateMachine</AssemblyName>
         <TargetFramework>net8.0-windows</TargetFramework>
-        <Version>1.2.0</Version>
+        <Version>2.0.0</Version>
         <UseWindowsForms>true</UseWindowsForms>
         <Deterministic>False</Deterministic>
         <Description>NStateMachine</Description>
