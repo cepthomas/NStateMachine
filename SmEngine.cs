@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Reflection;
 using System.Text;
-using Ephemera.NBagOfTricks.Slog;
+using Ephemera.NBagOfTricks;
 
 
 namespace Ephemera.NStateMachine
@@ -13,16 +13,16 @@ namespace Ephemera.NStateMachine
     {
         #region Fields
         /// <summary>The original.</summary>
-        protected States<S, E> _states = new();
+        protected States<S, E> _states = [];
 
         /// <summary>All the states.</summary>
-        readonly Dictionary<S, State<S, E>> _stateMap = new();
+        readonly Dictionary<S, State<S, E>> _stateMap = [];
 
         /// <summary>The current state.</summary>
         State<S, E> _currentState = new();
 
         /// <summary>The event queue.</summary>
-        readonly Queue<EventInfo<S, E>> _eventQueue = new();
+        readonly Queue<EventInfo<S, E>> _eventQueue = [];
 
         /// <summary>Queue serializing access.</summary>
         readonly object _locker = new();
@@ -47,8 +47,8 @@ namespace Ephemera.NStateMachine
         /// <returns>Returns a string that contains the DOT markup.</returns>
         public string GenerateDot(string label)
         {
-            List<string> ls = new()
-            {
+            List<string> ls =
+            [
                 // Init attributes for dot.
                 "digraph StateDiagram {",
                 "    ratio=\"compress\";",
@@ -57,9 +57,9 @@ namespace Ephemera.NStateMachine
                 "    node [height=\"1\", width=\"1.5\", shape=\"ellipse\", fixedsize=\"true\", fontsize=\"10\", fontname=\"Arial\"];",
                 "    edge [fontsize=\"10\", fontname=\"Arial\"];",
                 ""
-            };
+            ];
 
-            List<string> errors = new();
+            List<string> errors = [];
 
             if (_states is null || _states.Count == 0)
             {
@@ -68,7 +68,7 @@ namespace Ephemera.NStateMachine
             else
             {
                 // Generate actual nodes and edges from states. Use original spec for this, not our adjusted runtime version.
-                Dictionary<S, string> nodeIds = new();
+                Dictionary<S, string> nodeIds = [];
 
                 // Collect the state node info. Presumably duplicates and invalids have already been detected by InitSm().
                 foreach (State<S, E> st in _states)
@@ -146,17 +146,13 @@ namespace Ephemera.NStateMachine
         {
             _stateMap.Clear();
             _eventQueue.Clear();
-            List<string> errors = new();
+            List<string> errors = [];
 
             // Populate our collection from the client.
             foreach (State<S, E> st in _states)
             {
                 // Sanity check for duplicate state names.
-                if (!_stateMap.ContainsKey(st.StateId))
-                {
-                    _stateMap.Add(st.StateId, st);
-                }
-                else
+                if (!_stateMap.TryAdd(st.StateId, st))
                 {
                     errors.Add($"Duplicate StateName[{st.StateId}]");
                 }
@@ -168,9 +164,9 @@ namespace Ephemera.NStateMachine
                 errors.AddRange(st.Init());
             }
 
-            if (_stateMap.ContainsKey(initialState))
+            if (_stateMap.TryGetValue(initialState, out State<S, E>? value))
             {
-                _currentState = _stateMap[initialState];
+                _currentState = value;
             }
             else // invalid initial state
             {
@@ -228,9 +224,9 @@ namespace Ephemera.NStateMachine
                             nextStateId = res.state;
                         }
                         // Try default state.
-                        else if (_stateMap.ContainsKey(Common<S, E>.DEFAULT_STATE_ID))
+                        else if (_stateMap.TryGetValue(Common<S, E>.DEFAULT_STATE_ID, out State<S, E>? value))
                         {
-                            res = _stateMap[Common<S, E>.DEFAULT_STATE_ID].ProcessEvent(ei);
+                            res = value.ProcessEvent(ei);
                             if (res.handled)
                             {
                                 handled = true;

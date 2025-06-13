@@ -1,6 +1,6 @@
 using System;
 using System.Collections.Generic;
-using Ephemera.NBagOfTricks.Slog;
+using Ephemera.NBagOfTricks;
 
 
 namespace Ephemera.NStateMachine.Demo
@@ -75,10 +75,10 @@ namespace Ephemera.NStateMachine.Demo
         }
 
         /// <summary>Current combination. Initial combination is: 000.</summary>
-        readonly List<Keys> _combination = new() { Keys.Key_0, Keys.Key_0, Keys.Key_0 };
+        readonly List<Keys> _combination = [Keys.Key_0, Keys.Key_0, Keys.Key_0];
 
         /// <summary>Where we are in the entered sequence.</summary>
-        readonly List<Keys> _currentEntry = new();
+        readonly List<Keys> _currentEntry = [];
 
         /// <summary>Current state of the lock.</summary>
         bool _isLocked = true;
