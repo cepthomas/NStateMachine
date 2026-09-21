@@ -16,7 +16,7 @@ namespace Ephemera.NStateMachine.Demo
     {
         Lock? _lock = null;
 
-        readonly Logger _logger = LogManager.CreateLogger("DemoApp");
+        readonly Logger _logger = LogManager.CreateLogger("App");
 
         public void Run()
         {

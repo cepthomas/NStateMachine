@@ -31,7 +31,7 @@ namespace Ephemera.NStateMachine
         bool _processingEvents = false;
 
         /// <summary>My logger.</summary>
-        readonly Logger _logger = LogManager.CreateLogger("SmEngine");
+        readonly Logger _logger = LogManager.CreateLogger("Engine");
         #endregion
 
         #region Properties
