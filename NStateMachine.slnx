@@ -1,0 +1,4 @@
+﻿<Solution>
+  <Project Path="NStateMachine.csproj" />
+  <Project Path="Demo/Demo.csproj" />
+</Solution>

@@ -4,7 +4,7 @@
         <OutputType>WinExe</OutputType>
         <RootNamespace>Ephemera.NStateMachine.Demo</RootNamespace>
         <AssemblyName>Ephemera.NStateMachine.Demo</AssemblyName>
-        <TargetFramework>net8.0-windows</TargetFramework>
+        <TargetFramework>net10.0-windows</TargetFramework>
         <UseWindowsForms>true</UseWindowsForms>
         <Version>2.0.0</Version>
         <Deterministic>False</Deterministic>
@@ -19,10 +19,6 @@
         <SatelliteResourceLanguages>none</SatelliteResourceLanguages>
         <!-- en none -->
     </PropertyGroup>
-
-    <ItemGroup>
-        <PackageReference Include="System.Drawing.Common" Version="6.0.0" />
-    </ItemGroup>
 
     <ItemGroup>
         <ProjectReference Include="..\NStateMachine.csproj" />

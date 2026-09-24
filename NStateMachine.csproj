@@ -4,7 +4,7 @@
         <OutputType>Library</OutputType>
         <RootNamespace>Ephemera.NStateMachine</RootNamespace>
         <AssemblyName>Ephemera.NStateMachine</AssemblyName>
-        <TargetFramework>net8.0-windows</TargetFramework>
+        <TargetFramework>net10.0-windows</TargetFramework>
         <Version>2.0.0</Version>
         <UseWindowsForms>true</UseWindowsForms>
         <Deterministic>False</Deterministic>
@@ -27,10 +27,6 @@
         <EmbeddedResource Remove="lib\**" />
         <None Remove="Demo\**" />
         <None Remove="lib\**" />
-    </ItemGroup>
-
-    <ItemGroup>
-      <PackageReference Include="System.Drawing.Common" Version="6.0.0" />
     </ItemGroup>
 
     <ItemGroup>
